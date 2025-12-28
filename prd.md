@@ -1,4 +1,4 @@
-# PRD: Rallx Browser Ai
+# PRD: Rallx browser AI
 
 Version: 2.1
 
@@ -10,7 +10,7 @@ Architecture Style: Vanilla JS (No build steps required)
 
 ## 1. Project Overview
 
-Develop a Firefox browser extension that acts as a sidebar AI assistant. It connects to a local LLM server to summarize web pages and answer questions. It features real-time text streaming, automatic model detection from the local server, and intelligent context injection from the active tab.
+Develop Rallx browser AI, a Firefox browser extension that acts as a sidebar AI assistant. It connects to a local LLM server to summarize web pages and answer questions. It features real-time text streaming, automatic model detection from the local server, and intelligent context injection from the active tab.
 
 ## 2. Technical Stack & Constraints
 
@@ -97,7 +97,7 @@ JSON
 ```
 {
   "manifest_version": 3,
-  "name": "Firefox Local AI",
+  "name": "Rallx browser AI",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
   "sidebar_action": {

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Firefox Local AI",
+  "name": "Rallx browser AI",
   "version": "1.0",
   "description": "A sidebar AI assistant that connects to a local LLM server.",
   "permissions": [
