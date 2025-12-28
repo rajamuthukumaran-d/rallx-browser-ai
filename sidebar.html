@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Firefox Local AI</title>
+  <link rel="stylesheet" type="text/css" href="sidebar.css">
+</head>
+<body>
+  <div class="container">
+    <div class="settings">
+      <label for="base-url">LLM Base URL:</label>
+      <input type-="text" id="base-url" value="http://localhost:11434/v1">
+      <div class="actions">
+        <button id="refresh-models">Refresh</button>
+        <button id="save-base-url">Save</button>
+      </div>
+    </div>
+    <div class="model-selection">
+      <label for="model-select">Model:</label>
+      <select id="model-select"></select>
+    </div>
+    <div class="chat-container">
+      <div id="chat-history"></div>
+      <div class="chat-input">
+        <textarea id="prompt-input" placeholder="Type your message..."></textarea>
+        <button id="send-prompt">Send</button>
+        <button id="stop-generating" style="display: none;">Stop</button>
+      </div>
+    </div>
+    <div class="actions">
+        <button id="summarize-page">Summarize Page</button>
+        <button id="clear-chat">Clear Chat</button>
+    </div>
+  </div>
+  <script src="sidebar.js"></script>
+</body>
+</html>
