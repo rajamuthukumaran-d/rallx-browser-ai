@@ -209,8 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const messageElement = document.createElement("div");
       messageElement.classList.add("message");
       const messageContent = document.createElement("div");
-      // Allow wrapping for long text
-      messageContent.style.whiteSpace = "pre-wrap";
+      messageContent.classList.add("message-content");
       messageContent.style.flexGrow = "1";
 
       const copyButton = document.createElement("button");
@@ -260,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ) {
                   const content = json.choices[0].delta.content;
                   fullContent += content;
-                  messageContent.textContent += content;
+                  messageContent.innerHTML = parseMarkdown(fullContent);
                   chatHistory.scrollTop = chatHistory.scrollHeight;
                 }
               } catch (error) {

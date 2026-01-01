@@ -184,13 +184,63 @@ body, html {
 .message {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start; /* Align to top for longer messages */
     border-bottom: 1px solid #eee;
     padding: 10px 0;
 }
 
 .message:last-child {
     border-bottom: none;
+}
+
+/* Message Content Styling (Markdown) */
+.message-content {
+    flex-grow: 1;
+    overflow-wrap: break-word; /* Ensure long words don't overflow */
+    min-width: 0; /* Fix flex child overflow issues */
+}
+
+.message-content pre {
+    background-color: #f6f8fa;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-x: auto;
+    font-family: monospace;
+    margin: 5px 0;
+}
+
+.message-content code {
+    background-color: #f0f0f0;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.message-content pre code {
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+.message-content h1, .message-content h2, .message-content h3 {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 1.1em; /* Keep it subtle in chat */
+    font-weight: bold;
+}
+
+.message-content p {
+    margin: 5px 0;
+}
+
+.message-content a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.message-content a:hover {
+    text-decoration: underline;
 }
 
 .message button {
@@ -201,6 +251,7 @@ body, html {
     font-size: 12px;
     margin-left: 10px;
     padding: 3px 6px;
+    white-space: nowrap; /* Prevent button text wrapping */
 }
 
 .message button:hover {
