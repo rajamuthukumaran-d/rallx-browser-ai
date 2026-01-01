@@ -12,7 +12,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const contextTitle = document.getElementById("context-title");
   const contextDetails = document.getElementById("context-details");
   const contextIcon = document.getElementById("context-icon");
-  const contextIconPlaceholder = document.getElementById("context-icon-placeholder");
+  const contextIconPlaceholder = document.getElementById(
+    "context-icon-placeholder"
+  );
   const removeContextBtn = document.getElementById("remove-context");
   const summarizeSelectionBtn = document.getElementById("summarize-selection");
   const addPageContextBtn = document.getElementById("add-page-context");
@@ -81,65 +83,80 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastIgnoredSelection = "";
   let isPageContext = false;
 
+  const updateInputPlaceholder = () => {
+    if (selectedContextText) {
+      promptInput.placeholder = isPageContext
+        ? "Ask about this page..."
+        : "Ask about selection...";
+    } else {
+      promptInput.placeholder = "Ask anything...";
+    }
+  };
+
   const updateContextDisplay = (text, isPage = false, metadata = null) => {
     if (text) {
       selectedContextText = text;
       isPageContext = isPage;
-      
+
       // Update Title
       if (isPage) {
-          contextTitle.textContent = metadata && metadata.title ? metadata.title : "Page Content";
+        contextTitle.textContent =
+          metadata && metadata.title ? metadata.title : "Page Content";
       } else {
-          contextTitle.textContent = "Selected Text";
+        contextTitle.textContent = "Selected Text";
       }
 
       // Update Details (URL or Snippet)
       if (metadata && metadata.url) {
-          try {
-              const urlObj = new URL(metadata.url);
-              contextDetails.textContent = urlObj.hostname + (urlObj.pathname.length > 1 ? urlObj.pathname : "");
-          } catch (e) {
-              contextDetails.textContent = metadata.url;
-          }
+        try {
+          const urlObj = new URL(metadata.url);
+          contextDetails.textContent =
+            urlObj.hostname +
+            (urlObj.pathname.length > 1 ? urlObj.pathname : "");
+        } catch (e) {
+          contextDetails.textContent = metadata.url;
+        }
       } else {
-          // Fallback to text snippet if no URL
-          contextDetails.textContent = text.substring(0, 60) + (text.length > 60 ? "..." : "");
+        // Fallback to text snippet if no URL
+        contextDetails.textContent =
+          text.substring(0, 60) + (text.length > 60 ? "..." : "");
       }
 
       // Update Icon
       if (metadata && metadata.favIconUrl) {
-          contextIcon.src = metadata.favIconUrl;
-          contextIcon.style.display = "block";
-          contextIconPlaceholder.style.display = "none";
+        contextIcon.src = metadata.favIconUrl;
+        contextIcon.style.display = "block";
+        contextIconPlaceholder.style.display = "none";
       } else {
-          contextIcon.style.display = "none";
-          contextIconPlaceholder.style.display = "flex";
-          contextIconPlaceholder.textContent = isPage ? "📄" : "📝";
+        contextIcon.style.display = "none";
+        contextIconPlaceholder.style.display = "flex";
+        contextIconPlaceholder.textContent = isPage ? "📄" : "📝";
       }
 
       contextIndicator.style.display = "block"; // or flex, handled by CSS? CSS has padding. Inner card has display: flex.
       // Wait, .context-indicator has padding but no display:flex in my CSS update.
       // And HTML has style="display: none".
       // So block is fine.
-      
+
       // Hide summarize selection if it's the full page context
-      if (summarizeSelectionBtn) summarizeSelectionBtn.style.display = isPage ? "none" : "";
+      if (summarizeSelectionBtn)
+        summarizeSelectionBtn.style.display = isPage ? "none" : "";
       if (addPageContextBtn) addPageContextBtn.style.display = "none";
-      
+
       // If we are setting a new context, we can forget about what was previously ignored
       lastIgnoredSelection = "";
-      promptInput.placeholder = "Ask about this context...";
+      updateInputPlaceholder();
     } else {
       selectedContextText = "";
       isPageContext = false;
       // contextText.textContent = ""; // Removed
       contextTitle.textContent = "";
       contextDetails.textContent = "";
-      
+
       contextIndicator.style.display = "none";
       if (summarizeSelectionBtn) summarizeSelectionBtn.style.display = "none";
       if (addPageContextBtn) addPageContextBtn.style.display = "";
-      promptInput.placeholder = "Ask follow up...";
+      updateInputPlaceholder();
     }
   };
 
@@ -179,9 +196,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await getPageContent();
       if (result) {
         updateContextDisplay(result.content, true, {
-            title: result.tab.title,
-            url: result.tab.url,
-            favIconUrl: result.tab.favIconUrl
+          title: result.tab.title,
+          url: result.tab.url,
+          favIconUrl: result.tab.favIconUrl,
         });
         promptInput.focus();
       } else {
@@ -219,9 +236,9 @@ document.addEventListener("DOMContentLoaded", () => {
           currentSelection !== lastIgnoredSelection
         ) {
           updateContextDisplay(currentSelection, false, {
-              title: tab.title,
-              url: tab.url,
-              favIconUrl: tab.favIconUrl
+            title: tab.title,
+            url: tab.url,
+            favIconUrl: tab.favIconUrl,
           });
         }
       }
@@ -361,6 +378,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+    updateInputPlaceholder();
   };
 
   const appendUserMessage = (text, metadata = null) => {
@@ -416,6 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatHistory.appendChild(messageElement);
     chatHistory.scrollTop = chatHistory.scrollHeight;
     saveChatHistory();
+    updateInputPlaceholder();
   };
 
   const streamResponse = async (prompt) => {
@@ -466,7 +485,7 @@ document.addEventListener("DOMContentLoaded", () => {
       copyIcon.className = "icon-img";
       copyButton.appendChild(copyIcon);
       // Remove margin from button since footer handles spacing or button has its own
-      copyButton.style.marginLeft = "0"; 
+      copyButton.style.marginLeft = "0";
 
       const statsSpan = document.createElement("span");
       statsSpan.style.fontSize = "11px";
@@ -484,7 +503,7 @@ document.addEventListener("DOMContentLoaded", () => {
       footer.appendChild(copyButton);
       footer.appendChild(statsSpan);
       messageElement.appendChild(footer);
-      
+
       chatHistory.appendChild(messageElement);
       chatHistory.scrollTop = chatHistory.scrollHeight;
 
@@ -508,11 +527,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             try {
               const json = JSON.parse(data);
-              
+
               // Check for usage info if available
               if (json.usage && json.usage.completion_tokens) {
-                  // If usage is provided, use it (often in last chunk)
-                  // tokenCount = json.usage.completion_tokens;
+                // If usage is provided, use it (often in last chunk)
+                // tokenCount = json.usage.completion_tokens;
               }
 
               if (
@@ -539,8 +558,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const tps = duration > 0 ? (tokenCount / duration).toFixed(1) : 0;
       const modelName = modelSelect.value.split("/").pop();
       // Capitalize first letter for display
-      const displayModel = modelName.charAt(0).toUpperCase() + modelName.slice(1);
-      
+      const displayModel =
+        modelName.charAt(0).toUpperCase() + modelName.slice(1);
+
       statsSpan.textContent = `${displayModel} | ${tokenCount} tokens | ${tps} t/s`;
 
       // Cleanup on success
@@ -648,6 +668,7 @@ document.addEventListener("DOMContentLoaded", () => {
   clearChatBtn.addEventListener("click", () => {
     chatHistory.innerHTML = "";
     saveChatHistory();
+    updateInputPlaceholder();
   });
 
   refreshModelsBtn.addEventListener("click", () => {
