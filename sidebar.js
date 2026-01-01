@@ -91,6 +91,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   promptInput.addEventListener("focus", checkSelection);
 
+  promptInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendPromptBtn.click();
+    }
+  });
+
   // Also check when mouse enters the chat area, to catch selections made while sidebar was open
   document
     .querySelector(".chat-container")
