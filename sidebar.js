@@ -9,7 +9,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatHistory = document.getElementById("chat-history");
 
   const contextIndicator = document.getElementById("context-indicator");
-  const contextText = document.getElementById("context-text");
+  // const contextText = document.getElementById("context-text"); // Removed
+  const contextTitle = document.getElementById("context-title");
+  const contextDetails = document.getElementById("context-details");
+  const contextIcon = document.getElementById("context-icon");
+  const contextIconPlaceholder = document.getElementById("context-icon-placeholder");
+  
   const removeContextBtn = document.getElementById("remove-context");
   const summarizeSelectionBtn = document.getElementById("summarize-selection");
   const addPageContextBtn = document.getElementById("add-page-context");
@@ -78,14 +83,46 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastIgnoredSelection = "";
   let isPageContext = false;
 
-  const updateContextDisplay = (text, isPage = false) => {
+  const updateContextDisplay = (text, isPage = false, metadata = null) => {
     if (text) {
       selectedContextText = text;
       isPageContext = isPage;
-      contextText.textContent = `${isPage ? 'Page' : 'Selected'} Context: "${text.substring(0, 50)}${
-        text.length > 50 ? "..." : ""
-      }"`;
-      contextIndicator.style.display = "flex";
+      
+      // Update Title
+      if (isPage) {
+          contextTitle.textContent = metadata && metadata.title ? metadata.title : "Page Content";
+      } else {
+          contextTitle.textContent = "Selected Text";
+      }
+
+      // Update Details (URL or Snippet)
+      if (metadata && metadata.url) {
+          try {
+              const urlObj = new URL(metadata.url);
+              contextDetails.textContent = urlObj.hostname + (urlObj.pathname.length > 1 ? urlObj.pathname : "");
+          } catch (e) {
+              contextDetails.textContent = metadata.url;
+          }
+      } else {
+          // Fallback to text snippet if no URL
+          contextDetails.textContent = text.substring(0, 60) + (text.length > 60 ? "..." : "");
+      }
+
+      // Update Icon
+      if (metadata && metadata.favIconUrl) {
+          contextIcon.src = metadata.favIconUrl;
+          contextIcon.style.display = "block";
+          contextIconPlaceholder.style.display = "none";
+      } else {
+          contextIcon.style.display = "none";
+          contextIconPlaceholder.style.display = "flex";
+          contextIconPlaceholder.textContent = isPage ? "📄" : "📝";
+      }
+
+      contextIndicator.style.display = "block"; // or flex, handled by CSS? CSS has padding. Inner card has display: flex.
+      // Wait, .context-indicator has padding but no display:flex in my CSS update.
+      // And HTML has style="display: none".
+      // So block is fine.
       
       // Hide summarize selection if it's the full page context
       if (summarizeSelectionBtn) summarizeSelectionBtn.style.display = isPage ? "none" : "";
@@ -93,13 +130,18 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // If we are setting a new context, we can forget about what was previously ignored
       lastIgnoredSelection = "";
+      promptInput.placeholder = "Ask about this context...";
     } else {
       selectedContextText = "";
       isPageContext = false;
-      contextText.textContent = "";
+      // contextText.textContent = ""; // Removed
+      contextTitle.textContent = "";
+      contextDetails.textContent = "";
+      
       contextIndicator.style.display = "none";
       if (summarizeSelectionBtn) summarizeSelectionBtn.style.display = "none";
       if (addPageContextBtn) addPageContextBtn.style.display = "";
+      promptInput.placeholder = "Ask follow up...";
     }
   };
 
@@ -138,7 +180,11 @@ document.addEventListener("DOMContentLoaded", () => {
     addPageContextBtn.addEventListener("click", async () => {
       const result = await getPageContent();
       if (result) {
-        updateContextDisplay(result.content, true);
+        updateContextDisplay(result.content, true, {
+            title: result.tab.title,
+            url: result.tab.url,
+            favIconUrl: result.tab.favIconUrl
+        });
         promptInput.focus();
       } else {
         showToast("Could not get page content", "warning");
@@ -153,7 +199,8 @@ document.addEventListener("DOMContentLoaded", () => {
         currentWindow: true,
       });
       if (tabs && tabs.length > 0) {
-        const response = await browser.tabs.sendMessage(tabs[0].id, {
+        const tab = tabs[0];
+        const response = await browser.tabs.sendMessage(tab.id, {
           action: "get_selection",
         });
         const currentSelection =
@@ -173,7 +220,11 @@ document.addEventListener("DOMContentLoaded", () => {
           currentSelection !== selectedContextText &&
           currentSelection !== lastIgnoredSelection
         ) {
-          updateContextDisplay(currentSelection, false);
+          updateContextDisplay(currentSelection, false, {
+              title: tab.title,
+              url: tab.url,
+              favIconUrl: tab.favIconUrl
+          });
         }
       }
     } catch (error) {

@@ -40,9 +40,19 @@
 
     <!-- Context Indicator (Floating or above input) -->
     <div id="context-indicator" class="context-indicator" style="display: none;">
-      <span class="context-icon">📄</span>
-      <span id="context-text"></span>
-      <button id="remove-context" title="Remove">&times;</button>
+      <div class="context-card">
+          <div class="context-icon-wrapper">
+              <img id="context-icon" class="context-icon-img" style="display: none;">
+              <div id="context-icon-placeholder" class="context-icon-placeholder">📄</div>
+          </div>
+          <div class="context-info">
+              <div id="context-title" class="context-title">Context</div>
+              <div id="context-details" class="context-details"></div>
+          </div>
+          <button id="remove-context" class="remove-context-btn">
+            <img src="assets/icons/close.svg" class="icon-img" alt="Remove">
+          </button>
+      </div>
     </div>
 
     <!-- Bottom Input Area -->
