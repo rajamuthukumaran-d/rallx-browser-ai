@@ -96,10 +96,10 @@ html {
   left: 0;
   right: 0;
   z-index: 100;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   background-color: var(--surface-color);
   border-bottom: 1px solid var(--border-color);
-  padding: 15px;
+  padding: 18px 15px 15px 15px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -112,6 +112,21 @@ html {
   padding: 0 15px;
   max-height: 0;
   border-bottom: none;
+}
+
+.close-panel-btn {
+  align-self: flex-end; /* Position top right in flex column */
+  margin-bottom: -10px; /* Pull it up a bit if needed or just align */
+  /* Better: absolute position inside panel */
+  position: absolute;
+  top: 2px;
+  right: 10px;
+  padding: 2px;
+}
+
+.close-panel-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .setting-item {
@@ -456,7 +471,12 @@ button:hover {
   cursor: pointer;
 }
 
-.tool-btn:hover {
+.tool-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.tool-btn:hover:not(:disabled) {
   background-color: rgba(255, 255, 255, 0.1);
   color: white;
 }
@@ -575,7 +595,6 @@ button:hover {
 .send-btn .icon-img,
 .stop-btn .icon-img {
   width: 18px;
-
   height: 18px;
 }
 

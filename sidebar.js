@@ -14,11 +14,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const settingsToggle = document.getElementById("settings-toggle-toolbar");
   const settingsPanel = document.getElementById("settings-panel");
+  const closeSettingsBtn = document.getElementById("close-settings");
 
   if (settingsToggle) {
     settingsToggle.addEventListener("click", () => {
+      // Prevent closing if close button is disabled (means connection error)
+      if (!settingsPanel.classList.contains('collapsed') && closeSettingsBtn.disabled) {
+          return;
+      }
       settingsPanel.classList.toggle("collapsed");
       settingsToggle.classList.toggle("collapsed");
+    });
+  }
+
+  if (closeSettingsBtn) {
+    closeSettingsBtn.addEventListener("click", () => {
+      settingsPanel.classList.add("collapsed");
+      if (settingsToggle) {
+        settingsToggle.classList.add("collapsed");
+      }
     });
   }
 
@@ -132,11 +146,18 @@ document.addEventListener("DOMContentLoaded", () => {
         modelSelect.appendChild(option);
       });
       loadSelectedModel();
+      if (closeSettingsBtn) closeSettingsBtn.disabled = false;
+      if (settingsToggle) settingsToggle.disabled = false;
     } catch (error) {
       console.error("Error fetching models:", error);
       settingsPanel.classList.remove("collapsed");
+      if (settingsToggle) {
+          settingsToggle.classList.remove("collapsed");
+          settingsToggle.disabled = true;
+      }
       modelSelect.innerHTML =
         "<option disabled selected>No Connection</option>";
+      if (closeSettingsBtn) closeSettingsBtn.disabled = true;
       showToast("Could not connect to LLM Server. Check URL.", "warning");
     }
   };
