@@ -187,11 +187,48 @@ body, html {
     align-items: flex-start; /* Align to top for longer messages */
     border-bottom: 1px solid #eee;
     padding: 10px 0;
+    width: 100%;
 }
 
 .message:last-child {
     border-bottom: none;
 }
+
+/* User Message Bubble */
+.message.user {
+    justify-content: flex-end;
+    border-bottom: none;
+    padding-bottom: 5px;
+}
+
+.message.user .message-content {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 15px 15px 0 15px; /* Bubble tail bottom-left? No, usually right. */
+    /* Let's do standard bubble: rounded. */
+    border-radius: 15px;
+    border-bottom-right-radius: 2px;
+    max-width: 80%;
+    flex-grow: 0; /* Don't stretch */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.message.user button {
+    display: none; /* Hide copy button for user messages usually, or style it differently */
+}
+
+/* AI Message */
+.message.ai {
+    /* Existing AI styles mostly apply here, kept plain */
+    flex-direction: row;
+}
+
+.message.ai .message-content {
+    /* No bubble background for AI as requested, just text */
+    padding-left: 5px;
+}
+
 
 /* Message Content Styling (Markdown) */
 .message-content {
@@ -215,6 +252,13 @@ body, html {
     border-radius: 3px;
     font-family: monospace;
     font-size: 0.9em;
+    color: #333; /* Ensure readability */
+}
+
+/* Fix code contrast in user bubble if needed */
+.message.user .message-content code {
+    background-color: rgba(255,255,255,0.2);
+    color: white;
 }
 
 .message-content pre code {
@@ -237,6 +281,11 @@ body, html {
 .message-content a {
     color: #007bff;
     text-decoration: none;
+}
+
+.message.user .message-content a {
+    color: #e0e0e0;
+    text-decoration: underline;
 }
 
 .message-content a:hover {

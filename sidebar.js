@@ -179,6 +179,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  const appendUserMessage = (text) => {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message', 'user');
+      
+      const messageContent = document.createElement('div');
+      messageContent.classList.add('message-content');
+      messageContent.textContent = text;
+      
+      messageElement.appendChild(messageContent);
+      chatHistory.appendChild(messageElement);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+      saveChatHistory();
+  };
+
   const streamResponse = async (prompt) => {
     const baseUrl = baseUrlInput.value;
     sendPromptBtn.style.display = "none";
@@ -207,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
       chatHistory.removeChild(loadingIndicator);
 
       const messageElement = document.createElement("div");
-      messageElement.classList.add("message");
+      messageElement.classList.add("message", "ai");
       const messageContent = document.createElement("div");
       messageContent.classList.add("message-content");
       messageContent.style.flexGrow = "1";
@@ -288,6 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
   sendPromptBtn.addEventListener("click", async () => {
     const prompt = promptInput.value;
     if (prompt) {
+      appendUserMessage(prompt);
       let finalPrompt = prompt;
 
       const maxTokens =
@@ -372,6 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const prompt = `Summarize the following web page content: ${content}`;
+        appendUserMessage("Summarize this page");
         streamResponse(prompt);
       }
     } catch (error) {
