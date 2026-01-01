@@ -36,6 +36,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Close settings on outside click
+  document.addEventListener("click", (e) => {
+    if (!settingsPanel.classList.contains("collapsed") && !closeSettingsBtn.disabled) {
+      const isClickInsidePanel = settingsPanel.contains(e.target);
+      const isClickOnToggle = settingsToggle && settingsToggle.contains(e.target);
+      
+      if (!isClickInsidePanel && !isClickOnToggle) {
+        settingsPanel.classList.add("collapsed");
+        if (settingsToggle) {
+          settingsToggle.classList.add("collapsed");
+        }
+      }
+    }
+  });
+
   const showToast = (message, type = "info") => {
     const toast = document.getElementById("toast");
     toast.textContent = message;
