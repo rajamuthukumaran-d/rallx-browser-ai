@@ -69,8 +69,12 @@
         
         <div class="input-toolbar">
           <div class="left-tools">
-            <button class="tool-btn" title="Context (Auto)" disabled>📝</button> <!-- Visual placeholder for now -->
-            <button class="tool-btn" title="Attach" disabled>zk</button> <!-- Visual placeholder -->
+            <button id="clear-chat-toolbar" class="tool-btn" title="Clear Chat">
+                <img src="assets/icons/clear_all.svg" class="icon-img" alt="Clear">
+            </button>
+            <button id="refresh-models-toolbar" class="tool-btn" title="Refresh Models">
+                <img src="assets/icons/sync.svg" class="icon-img" alt="Sync">
+            </button>
           </div>
           <div class="right-tools">
             <div class="model-selector-wrapper">
@@ -82,7 +86,9 @@
             <button id="send-prompt" class="send-btn">
                 <img src="assets/icons/send.svg" class="icon-img" alt="Send">
             </button>
-            <button id="stop-generating" class="stop-btn" style="display: none;">⏹</button>
+            <button id="stop-generating" class="stop-btn" style="display: none;">
+                <img src="assets/icons/stop.svg" class="icon-img" alt="Stop">
+            </button>
           </div>
         </div>
       </div>

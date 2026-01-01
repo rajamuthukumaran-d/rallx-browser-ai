@@ -186,6 +186,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveBaseUrlBtn = document.getElementById("save-base-url");
   saveBaseUrlBtn.addEventListener("click", saveBaseUrl);
 
+  const clearChatToolbar = document.getElementById("clear-chat-toolbar");
+  const refreshModelsToolbar = document.getElementById("refresh-models-toolbar");
+
+  if (clearChatToolbar) {
+    clearChatToolbar.addEventListener("click", () => clearChatBtn.click());
+  }
+  if (refreshModelsToolbar) {
+    refreshModelsToolbar.addEventListener("click", () => refreshModelsBtn.click());
+  }
+
   const saveChatHistory = () => {
     browser.storage.local.set({ chatHistory: chatHistory.innerHTML });
   };

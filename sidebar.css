@@ -503,14 +503,12 @@ button:hover {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s;
   display: grid;
   place-items: center;
+  padding: 0;
 }
 
 .send-btn {
@@ -574,8 +572,10 @@ button:hover {
 }
 
 .dropdown-arrow .icon-img,
-.send-btn .icon-img {
+.send-btn .icon-img,
+.stop-btn .icon-img {
   width: 18px;
+
   height: 18px;
 }
 
