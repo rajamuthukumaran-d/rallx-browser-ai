@@ -11,10 +11,11 @@
   --hover-color: #3c4043;
 }
 
-body, html {
+body,
+html {
   height: 100%;
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: var(--bg-color);
   color: var(--text-primary);
   overflow: hidden; /* App container handles scroll */
@@ -62,6 +63,7 @@ body, html {
 .model-name-display {
   font-weight: bold;
   font-size: 14px;
+  text-transform: capitalize;
 }
 
 .model-id-display {
@@ -77,6 +79,9 @@ body, html {
   color: var(--text-secondary);
   padding: 5px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .icon-button:hover {
@@ -91,7 +96,7 @@ body, html {
   left: 0;
   right: 0;
   z-index: 100;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   background-color: var(--surface-color);
   border-bottom: 1px solid var(--border-color);
   padding: 15px;
@@ -121,11 +126,12 @@ body, html {
 }
 
 .input-group {
-    display: flex;
-    gap: 5px;
+  display: flex;
+  gap: 5px;
 }
 
-input[type="text"], input[type="number"] {
+input[type="text"],
+input[type="number"] {
   background-color: var(--input-bg);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
@@ -145,20 +151,20 @@ button {
 }
 
 button:hover {
-    background-color: #4a4e51;
+  background-color: #4a4e51;
 }
 
 .full-width-btn {
-    width: 100%;
+  width: 100%;
 }
 
 .danger {
-    background-color: #5c2b2b;
-    color: #ffb4b4;
+  background-color: #5c2b2b;
+  color: #ffb4b4;
 }
 
 .danger:hover {
-    background-color: #7a3b3b;
+  background-color: #7a3b3b;
 }
 
 /* Chat History */
@@ -192,11 +198,18 @@ button:hover {
   flex-direction: column;
   max-width: 100%;
   animation: fadeIn 0.3s ease;
+  position: relative;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .message.user {
@@ -230,263 +243,293 @@ button:hover {
   max-width: 100%;
 }
 
+.message button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-top: 5px;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.message button:hover {
+  background-color: var(--hover-color);
+}
+
+.message button .icon-img {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.message button:hover .icon-img {
+  opacity: 1;
+}
+
 /* Page Card (Special User Message) */
 .page-card {
-    background-color: #2a2a2a;
-    border-radius: 12px;
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border: 1px solid #3c4043;
-    margin-top: 5px;
-    width: fit-content;
-    max-width: 100%;
+  background-color: #2a2a2a;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #3c4043;
+  margin-top: 5px;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .page-card-icon {
-    width: 32px;
-    height: 32px;
-    background-color: white; /* Favicons usually expect light bg */
-    border-radius: 6px;
-    padding: 4px;
-    box-sizing: border-box;
-    object-fit: contain;
+  width: 32px;
+  height: 32px;
+  background-color: white; /* Favicons usually expect light bg */
+  border-radius: 6px;
+  padding: 4px;
+  box-sizing: border-box;
+  object-fit: contain;
 }
 
 .page-card-info {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .page-card-title {
-    font-weight: bold;
-    font-size: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-weight: bold;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .page-card-url {
-    font-size: 11px;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Markdown Styling */
 .message-content pre {
-    background-color: #2b2d31;
-    padding: 10px;
-    border-radius: 6px;
-    overflow-x: auto;
-    margin: 10px 0;
-    border: 1px solid var(--border-color);
+  background-color: #2b2d31;
+  padding: 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 10px 0;
+  border: 1px solid var(--border-color);
 }
 
 .message-content code {
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 0.9em;
-    background-color: rgba(255,255,255,0.1);
-    padding: 2px 4px;
-    border-radius: 3px;
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 0.9em;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
 }
 
 .message-content pre code {
-    background-color: transparent;
-    padding: 0;
-    color: #e8eaed;
+  background-color: transparent;
+  padding: 0;
+  color: #e8eaed;
 }
 
-.message-content h1, .message-content h2, .message-content h3 {
-    margin-top: 15px;
-    margin-bottom: 5px;
-    color: white;
+.message-content h1,
+.message-content h2,
+.message-content h3 {
+  margin-top: 15px;
+  margin-bottom: 5px;
+  color: white;
 }
 
-.message-content ul, .message-content ol {
-    margin: 5px 0;
-    padding-left: 20px;
+.message-content ul,
+.message-content ol {
+  margin: 5px 0;
+  padding-left: 20px;
 }
 
 .message-content a {
-    color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 /* Context Indicator */
 .context-indicator {
-    background-color: #2b2d31;
-    color: var(--text-secondary);
-    font-size: 12px;
-    padding: 6px 12px;
-    margin: 0 20px 5px 20px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid var(--border-color);
+  background-color: #2b2d31;
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 6px 12px;
+  margin: 0 20px 5px 20px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-color);
 }
 
 #context-text {
-    flex-grow: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Input Area */
 .input-area {
-    padding: 10px 20px 20px 20px;
-    background-color: var(--bg-color); /* Cover content behind */
+  padding: 10px 20px 20px 20px;
+  background-color: var(--bg-color); /* Cover content behind */
 }
 
 .action-chips {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-    overflow-x: auto;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  overflow-x: auto;
 }
 
 .chip {
-    background-color: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 6px 12px;
-    font-size: 12px;
-    white-space: nowrap;
-    color: var(--text-primary);
-    transition: background-color 0.2s;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--text-primary);
+  transition: background-color 0.2s;
 }
 
 .chip:hover {
-    background-color: var(--hover-color);
+  background-color: var(--hover-color);
 }
 
 .input-box {
-    background-color: var(--input-bg);
-    border-radius: 24px;
-    padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border: 1px solid transparent;
-    transition: border-color 0.2s;
+  background-color: var(--input-bg);
+  border-radius: 24px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s;
 }
 
 .input-box:focus-within {
-    border-color: var(--border-color);
+  border-color: var(--border-color);
 }
 
 #prompt-input {
-    background: transparent;
-    border: none;
-    color: white;
-    font-size: 14px;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    min-height: 20px;
-    max-height: 100px; /* Expandable? */
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  min-height: 20px;
+  max-height: 100px; /* Expandable? */
 }
 
 .input-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .left-tools {
-    display: flex;
-    gap: 5px;
+  display: flex;
+  gap: 5px;
 }
 
 .tool-btn {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 16px;
-    padding: 5px;
-    border-radius: 50%;
-    cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 16px;
+  padding: 5px;
+  border-radius: 50%;
+  cursor: pointer;
 }
 
 .tool-btn:hover {
-    background-color: rgba(255,255,255,0.1);
-    color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 .right-tools {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .model-selector-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 #model-select {
-    appearance: none;
-    background-color: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 12px;
-    padding-right: 15px;
-    cursor: pointer;
-    outline: none;
-    max-width: 100px; /* Limit width */
+  appearance: none;
+  background-color: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding-right: 15px;
+  cursor: pointer;
+  outline: none;
+  max-width: 100px; /* Limit width */
+  text-transform: capitalize;
 }
 
 #model-select:hover {
-    color: white;
+  color: white;
 }
 
 .dropdown-arrow {
-    font-size: 10px;
-    color: var(--text-secondary);
-    pointer-events: none;
-    position: absolute;
-    right: 0;
+  font-size: 10px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  position: absolute;
+  right: 0;
 }
 
-.send-btn, .stop-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
+.send-btn,
+.stop-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: grid;
+  place-items: center;
 }
 
 .send-btn {
-    background-color: white; /* Or accent color */
-    color: black;
+  background-color: white; /* Or accent color */
+  color: black;
 }
 
 .send-btn:hover {
-    background-color: #e0e0e0;
+  background-color: #e0e0e0;
 }
 
 .stop-btn {
-    background-color: var(--surface-color);
-    color: white;
-    border: 1px solid var(--border-color);
+  background-color: var(--surface-color);
+  color: white;
+  border: 1px solid var(--border-color);
 }
 
 .stop-btn:hover {
-    background-color: #5c2b2b;
-}
-
-.arrow-up {
-    font-weight: bold;
-    font-size: 18px;
+  background-color: #5c2b2b;
 }
 
 /* Toast */
@@ -506,7 +549,7 @@ button:hover {
   font-size: 13px;
   opacity: 0;
   transition: opacity 0.3s, bottom 0.3s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .toast.show {
@@ -517,4 +560,32 @@ button:hover {
 
 .toast.warning {
   border-left: 4px solid #ff9800;
+}
+
+/* Icons */
+.icon-img {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.send-btn .icon-img {
+  filter: brightness(0); /* Black icon */
+}
+
+.dropdown-arrow .icon-img,
+.send-btn .icon-img {
+  width: 18px;
+  height: 18px;
+}
+
+#clear-chat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#clear-chat .icon-img {
+  width: 18px;
+  height: 18px;
 }

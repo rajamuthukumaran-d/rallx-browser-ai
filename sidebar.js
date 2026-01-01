@@ -116,23 +116,25 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const response = await fetch(`${baseUrl}/models`);
       const data = await response.json();
-      
+
       if (!data.data || data.data.length === 0) {
-          throw new Error("No models found");
+        throw new Error("No models found");
       }
 
       modelSelect.innerHTML = "";
       data.data.forEach((model) => {
         const option = document.createElement("option");
         option.value = model.id;
-        option.textContent = model.id;
+        const name = model.id.split("/").pop();
+        option.textContent = name.charAt(0).toUpperCase() + name.slice(1);
         modelSelect.appendChild(option);
       });
       loadSelectedModel();
     } catch (error) {
       console.error("Error fetching models:", error);
       settingsPanel.classList.remove("collapsed");
-      modelSelect.innerHTML = "<option disabled selected>No Connection</option>";
+      modelSelect.innerHTML =
+        "<option disabled selected>No Connection</option>";
       showToast("Could not connect to LLM Server. Check URL.", "warning");
     }
   };
@@ -152,18 +154,20 @@ document.addEventListener("DOMContentLoaded", () => {
     browser.storage.local.set({ selectedModel: modelSelect.value });
   };
 
-  const headerModelName = document.getElementById('header-model-name');
-  const headerModelId = document.getElementById('header-model-id');
+  const headerModelName = document.getElementById("header-model-name");
+  const headerModelId = document.getElementById("header-model-id");
 
   const updateHeader = () => {
-      const selected = modelSelect.value;
-      if (selected) {
-          headerModelName.textContent = selected;
-          headerModelId.textContent = selected;
-      } else {
-           headerModelName.textContent = "Select Model";
-           headerModelId.textContent = "Local LLM";
-      }
+    const selected = modelSelect.value;
+    if (selected) {
+      const name = selected.split("/").pop();
+      headerModelName.textContent =
+        name.charAt(0).toUpperCase() + name.slice(1);
+      headerModelId.textContent = selected;
+    } else {
+      headerModelName.textContent = "Select Model";
+      headerModelId.textContent = "Local LLM";
+    }
   };
 
   const loadSelectedModel = async () => {
@@ -175,10 +179,10 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   modelSelect.addEventListener("change", () => {
-      saveSelectedModel();
-      updateHeader();
+    saveSelectedModel();
+    updateHeader();
   });
-  
+
   const saveBaseUrlBtn = document.getElementById("save-base-url");
   saveBaseUrlBtn.addEventListener("click", saveBaseUrl);
 
@@ -207,64 +211,64 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const appendUserMessage = (text, metadata = null) => {
-      const messageElement = document.createElement('div');
-      messageElement.classList.add('message', 'user');
-      
-      const messageContent = document.createElement('div');
-      messageContent.classList.add('message-content');
-      messageContent.textContent = text;
-      
-      if (metadata) {
-          const card = document.createElement('div');
-          card.className = 'page-card';
-          
-          if (metadata.favIconUrl) {
-              const icon = document.createElement('img');
-              icon.className = 'page-card-icon';
-              icon.src = metadata.favIconUrl;
-              card.appendChild(icon);
-          } else {
-               const icon = document.createElement('div');
-               icon.className = 'page-card-icon';
-               icon.textContent = '📄';
-               icon.style.display = 'flex';
-               icon.style.alignItems = 'center';
-               icon.style.justifyContent = 'center';
-               card.appendChild(icon);
-          }
-          
-          const info = document.createElement('div');
-          info.className = 'page-card-info';
-          
-          const title = document.createElement('div');
-          title.className = 'page-card-title';
-          title.textContent = metadata.title || 'Web Page';
-          
-          const url = document.createElement('div');
-          url.className = 'page-card-url';
-          try {
-             const urlObj = new URL(metadata.url);
-             url.textContent = urlObj.hostname;
-          } catch (e) {
-             url.textContent = metadata.url;
-          }
-          
-          info.appendChild(title);
-          info.appendChild(url);
-          card.appendChild(info);
-          messageContent.appendChild(card);
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("message", "user");
+
+    const messageContent = document.createElement("div");
+    messageContent.classList.add("message-content");
+    messageContent.textContent = text;
+
+    if (metadata) {
+      const card = document.createElement("div");
+      card.className = "page-card";
+
+      if (metadata.favIconUrl) {
+        const icon = document.createElement("img");
+        icon.className = "page-card-icon";
+        icon.src = metadata.favIconUrl;
+        card.appendChild(icon);
+      } else {
+        const icon = document.createElement("div");
+        icon.className = "page-card-icon";
+        icon.textContent = "📄";
+        icon.style.display = "flex";
+        icon.style.alignItems = "center";
+        icon.style.justifyContent = "center";
+        card.appendChild(icon);
       }
-      
-      messageElement.appendChild(messageContent);
-      chatHistory.appendChild(messageElement);
-      chatHistory.scrollTop = chatHistory.scrollHeight;
-      saveChatHistory();
+
+      const info = document.createElement("div");
+      info.className = "page-card-info";
+
+      const title = document.createElement("div");
+      title.className = "page-card-title";
+      title.textContent = metadata.title || "Web Page";
+
+      const url = document.createElement("div");
+      url.className = "page-card-url";
+      try {
+        const urlObj = new URL(metadata.url);
+        url.textContent = urlObj.hostname;
+      } catch (e) {
+        url.textContent = metadata.url;
+      }
+
+      info.appendChild(title);
+      info.appendChild(url);
+      card.appendChild(info);
+      messageContent.appendChild(card);
+    }
+
+    messageElement.appendChild(messageContent);
+    chatHistory.appendChild(messageElement);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+    saveChatHistory();
   };
 
   const streamResponse = async (prompt) => {
     const baseUrl = baseUrlInput.value;
     sendPromptBtn.style.display = "none";
-    stopGeneratingBtn.style.display = "block";
+    stopGeneratingBtn.style.display = "grid";
     abortController = new AbortController();
     const signal = abortController.signal;
     const loadingIndicator = document.createElement("div");
@@ -295,7 +299,10 @@ document.addEventListener("DOMContentLoaded", () => {
       messageContent.style.flexGrow = "1";
 
       const copyButton = document.createElement("button");
-      copyButton.textContent = "Copy";
+      const copyIcon = document.createElement("img");
+      copyIcon.src = "assets/icons/copy.svg";
+      copyIcon.className = "icon-img";
+      copyButton.appendChild(copyIcon);
 
       let fullContent = "";
 
@@ -324,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (line.startsWith("data: ")) {
             const data = line.substring(6);
             if (data.trim() === "[DONE]") {
-              break; 
+              break;
             }
             try {
               const json = JSON.parse(data);
@@ -353,9 +360,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Cleanup on success
       saveChatHistory();
-      sendPromptBtn.style.display = "block";
+      sendPromptBtn.style.display = "grid";
       stopGeneratingBtn.style.display = "none";
-
     } catch (error) {
       if (loadingIndicator.parentNode) {
         chatHistory.removeChild(loadingIndicator);
@@ -365,7 +371,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         console.error("Error sending prompt:", error);
       }
-      sendPromptBtn.style.display = "block";
+      sendPromptBtn.style.display = "grid";
       stopGeneratingBtn.style.display = "none";
     }
   };
@@ -460,9 +466,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const prompt = `Summarize the following web page content: ${content}`;
         appendUserMessage("Summarize this page", {
-            title: tab.title,
-            url: tab.url,
-            favIconUrl: tab.favIconUrl
+          title: tab.title,
+          url: tab.url,
+          favIconUrl: tab.favIconUrl,
         });
         streamResponse(prompt);
       }

@@ -16,7 +16,9 @@
           <div class="model-id-display" id="header-model-id">Local LLM</div>
         </div>
       </div>
-      <button id="settings-toggle" class="icon-button" title="Settings">⚙️</button>
+      <button id="settings-toggle" class="icon-button" title="Settings">
+        <img src="assets/icons/settings.svg" class="icon-img" alt="Settings">
+      </button>
     </div>
 
     <!-- Settings Panel (Overlay/Collapsible) -->
@@ -36,7 +38,10 @@
           <button id="refresh-models" class="full-width-btn">Refresh Models</button>
       </div>
       <div class="setting-item">
-          <button id="clear-chat" class="full-width-btn danger">Clear Chat</button>
+          <button id="clear-chat" class="full-width-btn danger">
+            <img src="assets/icons/clear_all.svg" class="icon-img" alt="Clear" style="vertical-align: middle; margin-right: 5px;">
+            Clear Chat
+          </button>
       </div>
     </div>
 
@@ -70,10 +75,12 @@
           <div class="right-tools">
             <div class="model-selector-wrapper">
                 <select id="model-select"></select>
-                <span class="dropdown-arrow">▼</span>
+                <span class="dropdown-arrow">
+                    <img src="assets/icons/arrow_down.svg" class="icon-img" alt="v">
+                </span>
             </div>
             <button id="send-prompt" class="send-btn">
-                <span class="arrow-up">↑</span>
+                <img src="assets/icons/send.svg" class="icon-img" alt="Send">
             </button>
             <button id="stop-generating" class="stop-btn" style="display: none;">⏹</button>
           </div>
