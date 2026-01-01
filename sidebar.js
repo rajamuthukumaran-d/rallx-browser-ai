@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingIndicator.classList.add('loading');
         chatHistory.appendChild(loadingIndicator);
         chatHistory.scrollTop = chatHistory.scrollHeight;
+
         try {
             const response = await fetch(`${baseUrl}/chat/completions`, {
                 method: 'POST',
@@ -105,9 +106,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 signal,
             });
 
+            chatHistory.removeChild(loadingIndicator);
+            
             const messageElement = document.createElement('div');
             messageElement.classList.add('message');
             const messageContent = document.createElement('div');
+            // Allow wrapping for long text
+            messageContent.style.whiteSpace = 'pre-wrap';
+            messageContent.style.flexGrow = '1';
+            
             const copyButton = document.createElement('button');
             copyButton.textContent = 'Copy';
             
@@ -119,7 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             messageElement.appendChild(messageContent);
             messageElement.appendChild(copyButton);
-            
+            chatHistory.appendChild(messageElement);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
@@ -128,9 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const push = () => {
                 reader.read().then(({ done, value }) => {
                     if (done) {
-                        chatHistory.removeChild(loadingIndicator);
-                        chatHistory.appendChild(messageElement);
-                        chatHistory.scrollTop = chatHistory.scrollHeight;
                         saveChatHistory();
                         sendPromptBtn.style.display = 'block';
                         stopGeneratingBtn.style.display = 'none';
@@ -143,9 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (line.startsWith('data: ')) {
                             const data = line.substring(6);
                             if (data.trim() === '[DONE]') {
-                                chatHistory.removeChild(loadingIndicator);
-                                chatHistory.appendChild(messageElement);
-                                chatHistory.scrollTop = chatHistory.scrollHeight;
                                 saveChatHistory();
                                 sendPromptBtn.style.display = 'block';
                                 stopGeneratingBtn.style.display = 'none';
@@ -153,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                             try {
                                 const json = JSON.parse(data);
-                                if (json.choices && json.choices[0].delta.content) {
+                                if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
                                     const content = json.choices[0].delta.content;
                                     fullContent += content;
                                     messageContent.textContent += content;
@@ -169,12 +171,14 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             push();
         } catch (error) {
+            if (loadingIndicator.parentNode) {
+                chatHistory.removeChild(loadingIndicator);
+            }
             if (error.name === 'AbortError') {
                 console.log('Fetch aborted');
             } else {
                 console.error('Error sending prompt:', error);
             }
-            chatHistory.removeChild(loadingIndicator);
             sendPromptBtn.style.display = 'block';
             stopGeneratingBtn.style.display = 'none';
         }
@@ -196,17 +200,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     summarizePageBtn.addEventListener('click', async () => {
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        if (!tabs || tabs.length === 0) return;
         const tabId = tabs[0].id;
 
-        const results = await browser.scripting.executeScript({
-            target: { tabId },
-            func: () => document.body.innerText,
-        });
-
-        if (results && results[0] && results[0].result) {
-            const content = results[0].result;
-            const prompt = `Summarize the following web page content: ${content}`;
-            streamResponse(prompt);
+        try {
+            const response = await browser.tabs.sendMessage(tabId, { action: "get_full_page" });
+            if (response && response.content) {
+                const prompt = `Summarize the following web page content: ${response.content}`;
+                streamResponse(prompt);
+            }
+        } catch (error) {
+            console.error("Error getting page content:", error);
         }
     });
 
@@ -227,19 +231,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loadContext = async () => {
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        if (!tabs || tabs.length === 0) return;
         const tabId = tabs[0].id;
 
         try {
-            const results = await browser.scripting.executeScript({
-                target: { tabId },
-                func: () => window.getSelection().toString(),
-            });
-
-            if (results && results[0] && results[0].result) {
-                const selection = results[0].result;
-                if (selection) {
-                    promptInput.value = `> "${selection}"\n\n`;
-                }
+            const response = await browser.tabs.sendMessage(tabId, { action: "get_selection" });
+            if (response && response.selection) {
+                promptInput.value = `> "${response.selection}"\n\n`;
             }
         } catch (error) {
             console.error("Could not get selection:", error);

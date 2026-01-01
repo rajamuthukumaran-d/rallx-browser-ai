@@ -6,8 +6,7 @@
   "permissions": [
     "activeTab",
     "scripting",
-    "storage",
-    "sidebars"
+    "storage"
   ],
   "host_permissions": [
     "http://localhost/*",

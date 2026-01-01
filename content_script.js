@@ -5,5 +5,7 @@
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "get_selection") {
       sendResponse({ selection: window.getSelection().toString() });
+    } else if (request.action === "get_full_page") {
+      sendResponse({ content: document.body.innerText });
     }
   });
