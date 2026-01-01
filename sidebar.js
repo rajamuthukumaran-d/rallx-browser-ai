@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const contextIndicator = document.getElementById("context-indicator");
   const contextText = document.getElementById("context-text");
   const removeContextBtn = document.getElementById("remove-context");
+  const summarizeSelectionBtn = document.getElementById("summarize-selection");
 
   const settingsToggle = document.getElementById("settings-toggle-toolbar");
   const settingsPanel = document.getElementById("settings-panel");
@@ -19,8 +20,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (settingsToggle) {
     settingsToggle.addEventListener("click", () => {
       // Prevent closing if close button is disabled (means connection error)
-      if (!settingsPanel.classList.contains('collapsed') && closeSettingsBtn.disabled) {
-          return;
+      if (
+        !settingsPanel.classList.contains("collapsed") &&
+        closeSettingsBtn.disabled
+      ) {
+        return;
       }
       settingsPanel.classList.toggle("collapsed");
       settingsToggle.classList.toggle("collapsed");
@@ -38,10 +42,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Close settings on outside click
   document.addEventListener("click", (e) => {
-    if (!settingsPanel.classList.contains("collapsed") && !closeSettingsBtn.disabled) {
+    if (
+      !settingsPanel.classList.contains("collapsed") &&
+      !closeSettingsBtn.disabled
+    ) {
       const isClickInsidePanel = settingsPanel.contains(e.target);
-      const isClickOnToggle = settingsToggle && settingsToggle.contains(e.target);
-      
+      const isClickOnToggle =
+        settingsToggle && settingsToggle.contains(e.target);
+
       if (!isClickInsidePanel && !isClickOnToggle) {
         settingsPanel.classList.add("collapsed");
         if (settingsToggle) {
@@ -75,14 +83,26 @@ document.addEventListener("DOMContentLoaded", () => {
         text.length > 50 ? "..." : ""
       }"`;
       contextIndicator.style.display = "flex";
+      if (summarizeSelectionBtn) summarizeSelectionBtn.style.display = "";
       // If we are setting a new context, we can forget about what was previously ignored
       lastIgnoredSelection = "";
     } else {
       selectedContextText = "";
       contextText.textContent = "";
       contextIndicator.style.display = "none";
+      if (summarizeSelectionBtn) summarizeSelectionBtn.style.display = "none";
     }
   };
+
+  if (summarizeSelectionBtn) {
+    summarizeSelectionBtn.addEventListener("click", () => {
+      if (selectedContextText) {
+        const prompt = `Summarize the following text:\n\n${selectedContextText}`;
+        appendUserMessage("Summarize selection");
+        streamResponse(prompt);
+      }
+    });
+  }
 
   const checkSelection = async () => {
     try {
@@ -163,17 +183,17 @@ document.addEventListener("DOMContentLoaded", () => {
       loadSelectedModel();
       if (closeSettingsBtn) closeSettingsBtn.disabled = false;
       if (settingsToggle) {
-          settingsToggle.disabled = false;
-          // Auto-close settings on success
-          settingsPanel.classList.add("collapsed");
-          settingsToggle.classList.add("collapsed");
+        settingsToggle.disabled = false;
+        // Auto-close settings on success
+        settingsPanel.classList.add("collapsed");
+        settingsToggle.classList.add("collapsed");
       }
     } catch (error) {
       console.error("Error fetching models:", error);
       settingsPanel.classList.remove("collapsed");
       if (settingsToggle) {
-          settingsToggle.classList.remove("collapsed");
-          settingsToggle.disabled = true;
+        settingsToggle.classList.remove("collapsed");
+        settingsToggle.disabled = true;
       }
       modelSelect.innerHTML =
         "<option disabled selected>No Connection</option>";
@@ -215,13 +235,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const clearChatToolbar = document.getElementById("clear-chat-toolbar");
-  const refreshModelsToolbar = document.getElementById("refresh-models-toolbar");
+  const refreshModelsToolbar = document.getElementById(
+    "refresh-models-toolbar"
+  );
 
   if (clearChatToolbar) {
     clearChatToolbar.addEventListener("click", () => clearChatBtn.click());
   }
   if (refreshModelsToolbar) {
-    refreshModelsToolbar.addEventListener("click", () => refreshModelsBtn.click());
+    refreshModelsToolbar.addEventListener("click", () =>
+      refreshModelsBtn.click()
+    );
   }
 
   const saveChatHistory = () => {
@@ -446,10 +470,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       streamResponse(finalPrompt);
       promptInput.value = "";
-
-      // Reset context
-      updateContextDisplay("");
-      lastIgnoredSelection = "";
     }
   });
 
