@@ -12,6 +12,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const contextText = document.getElementById("context-text");
   const removeContextBtn = document.getElementById("remove-context");
 
+  const showToast = (message, type = 'info') => {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast show';
+      if (type === 'warning') {
+          toast.classList.add('warning');
+      }
+      setTimeout(() => {
+          toast.className = 'toast hidden';
+      }, 3000);
+  };
+
   const DEFAULT_CONTEXT_TOKEN_LIMIT = 3098;
 
   let selectedContextText = "";
@@ -283,6 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Prioritize prompt, drop context or truncate heavily.
             contextToUse = contextToUse.substring(0, 100) + "... (truncated)";
           }
+          showToast("Context truncated to fit token limit.", "warning");
         }
         finalPrompt = `Context:\n${contextToUse}\n\nQuestion:\n${prompt}`;
       }
@@ -341,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (content.length > charLimit) {
           content = content.substring(0, charLimit);
-          console.log(`Content truncated to ${charLimit} characters.`);
+          showToast(`Page content truncated to fit token limit.`, "warning");
         }
 
         const prompt = `Summarize the following web page content: ${content}`;

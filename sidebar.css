@@ -44,6 +44,7 @@ body, html {
   border-radius: 5px;
   background-color: #fff;
   overflow-y: auto;
+  position: relative; /* For positioning context indicator if needed, though it's flex now */
 }
 
 #chat-history {
@@ -177,4 +178,34 @@ body, html {
     0% { background-color: #888; }
     50% { background-color: #ccc; }
     100% { background-color: #888; }
+}
+
+/* Toast Notification */
+.toast {
+  visibility: hidden;
+  min-width: 200px;
+  margin-left: -125px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 10px;
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  bottom: 30px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.5s, visibility 0.5s, bottom 0.5s;
+}
+
+.toast.show {
+  visibility: visible;
+  opacity: 1;
+  bottom: 50px;
+}
+
+.toast.warning {
+  background-color: #ff9800; /* Orange for warning */
+  color: white;
 }
