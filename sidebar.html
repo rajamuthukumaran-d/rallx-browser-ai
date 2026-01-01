@@ -7,20 +7,6 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-info">
-        <div class="app-icon">✨</div>
-        <div class="header-text">
-          <div class="model-name-display" id="header-model-name">Loading...</div>
-          <div class="model-id-display" id="header-model-id">Local LLM</div>
-        </div>
-      </div>
-      <button id="settings-toggle" class="icon-button" title="Settings">
-        <img src="assets/icons/settings.svg" class="icon-img" alt="Settings">
-      </button>
-    </div>
-
     <!-- Settings Panel (Overlay/Collapsible) -->
     <div id="settings-panel" class="settings-panel collapsed">
       <div class="setting-item">
@@ -35,11 +21,10 @@
         <input type="number" id="max-tokens" value="3098" step="128" min="128">
       </div>
       <div class="setting-item">
-          <button id="refresh-models" class="full-width-btn">Refresh Models</button>
+          <button id="refresh-models" class="full-width-btn">Sync Models</button>
       </div>
       <div class="setting-item">
           <button id="clear-chat" class="full-width-btn danger">
-            <img src="assets/icons/clear_all.svg" class="icon-img" alt="Clear" style="vertical-align: middle; margin-right: 5px;">
             Clear Chat
           </button>
       </div>
@@ -72,8 +57,8 @@
             <button id="clear-chat-toolbar" class="tool-btn" title="Clear Chat">
                 <img src="assets/icons/clear_all.svg" class="icon-img" alt="Clear">
             </button>
-            <button id="refresh-models-toolbar" class="tool-btn" title="Refresh Models">
-                <img src="assets/icons/sync.svg" class="icon-img" alt="Sync">
+            <button id="settings-toggle-toolbar" class="tool-btn" title="Settings">
+                <img src="assets/icons/settings.svg" class="icon-img" alt="Settings">
             </button>
           </div>
           <div class="right-tools">

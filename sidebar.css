@@ -92,11 +92,11 @@ html {
 /* Settings Panel */
 .settings-panel {
   position: absolute;
-  top: 70px;
+  top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   background-color: var(--surface-color);
   border-bottom: 1px solid var(--border-color);
   padding: 15px;

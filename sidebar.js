@@ -12,13 +12,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const contextText = document.getElementById("context-text");
   const removeContextBtn = document.getElementById("remove-context");
 
-  const settingsToggle = document.getElementById("settings-toggle");
+  const settingsToggle = document.getElementById("settings-toggle-toolbar");
   const settingsPanel = document.getElementById("settings-panel");
 
-  settingsToggle.addEventListener("click", () => {
-    settingsPanel.classList.toggle("collapsed");
-    settingsToggle.classList.toggle("collapsed");
-  });
+  if (settingsToggle) {
+    settingsToggle.addEventListener("click", () => {
+      settingsPanel.classList.toggle("collapsed");
+      settingsToggle.classList.toggle("collapsed");
+    });
+  }
 
   const showToast = (message, type = "info") => {
     const toast = document.getElementById("toast");
@@ -154,33 +156,15 @@ document.addEventListener("DOMContentLoaded", () => {
     browser.storage.local.set({ selectedModel: modelSelect.value });
   };
 
-  const headerModelName = document.getElementById("header-model-name");
-  const headerModelId = document.getElementById("header-model-id");
-
-  const updateHeader = () => {
-    const selected = modelSelect.value;
-    if (selected) {
-      const name = selected.split("/").pop();
-      headerModelName.textContent =
-        name.charAt(0).toUpperCase() + name.slice(1);
-      headerModelId.textContent = selected;
-    } else {
-      headerModelName.textContent = "Select Model";
-      headerModelId.textContent = "Local LLM";
-    }
-  };
-
   const loadSelectedModel = async () => {
     const data = await browser.storage.local.get("selectedModel");
     if (data.selectedModel) {
       modelSelect.value = data.selectedModel;
     }
-    updateHeader();
   };
 
   modelSelect.addEventListener("change", () => {
     saveSelectedModel();
-    updateHeader();
   });
 
   const saveBaseUrlBtn = document.getElementById("save-base-url");
