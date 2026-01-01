@@ -139,6 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await getPageContent();
       if (result) {
         updateContextDisplay(result.content, true);
+        promptInput.focus();
       } else {
         showToast("Could not get page content", "warning");
       }
