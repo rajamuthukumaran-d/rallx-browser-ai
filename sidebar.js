@@ -147,7 +147,12 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       loadSelectedModel();
       if (closeSettingsBtn) closeSettingsBtn.disabled = false;
-      if (settingsToggle) settingsToggle.disabled = false;
+      if (settingsToggle) {
+          settingsToggle.disabled = false;
+          // Auto-close settings on success
+          settingsPanel.classList.add("collapsed");
+          settingsToggle.classList.add("collapsed");
+      }
     } catch (error) {
       console.error("Error fetching models:", error);
       settingsPanel.classList.remove("collapsed");
@@ -189,7 +194,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const saveBaseUrlBtn = document.getElementById("save-base-url");
-  saveBaseUrlBtn.addEventListener("click", saveBaseUrl);
+  saveBaseUrlBtn.addEventListener("click", () => {
+    saveBaseUrl();
+    getModels();
+  });
 
   const clearChatToolbar = document.getElementById("clear-chat-toolbar");
   const refreshModelsToolbar = document.getElementById("refresh-models-toolbar");
