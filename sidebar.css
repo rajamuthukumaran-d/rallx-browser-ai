@@ -32,6 +32,8 @@ body, html {
 
 #model-select {
     flex-grow: 1;
+    min-width: 0;
+    width: 0; /* Forces flexbox to calculate width based on container, not content */
 }
 
 .chat-container {
