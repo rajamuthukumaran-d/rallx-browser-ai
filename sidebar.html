@@ -3,46 +3,86 @@
 <head>
   <title>Rallx browser AI</title>
   <link rel="stylesheet" type="text/css" href="sidebar.css">
+  <meta charset="utf-8">
 </head>
 <body>
-  <div class="container">
-    <button id="settings-toggle" class="settings-toggle">Configuration</button>
-    <div id="settings-panel">
-      <div class="settings">
-        <label for="base-url">LLM Base URL:</label>
-        <input type="text" id="base-url" value="http://localhost:11434/v1">
-        <div class="actions">
-          <button id="refresh-models">Refresh</button>
-          <button id="save-base-url">Save</button>
+  <div class="app-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-info">
+        <div class="app-icon">✨</div>
+        <div class="header-text">
+          <div class="model-name-display" id="header-model-name">Loading...</div>
+          <div class="model-id-display" id="header-model-id">Local LLM</div>
         </div>
       </div>
-      <div class="settings">
-          <label for="max-tokens">Max Context Tokens:</label>
-          <input type="number" id="max-tokens" value="3098" step="128" min="128">
+      <button id="settings-toggle" class="icon-button" title="Settings">⚙️</button>
+    </div>
+
+    <!-- Settings Panel (Overlay/Collapsible) -->
+    <div id="settings-panel" class="settings-panel collapsed">
+      <div class="setting-item">
+        <label for="base-url">LLM Base URL</label>
+        <div class="input-group">
+            <input type="text" id="base-url" value="http://localhost:11434/v1">
+            <button id="save-base-url">Save</button>
+        </div>
       </div>
-      <div class="model-selection">
-        <label for="model-select">Model:</label>
-        <select id="model-select"></select>
+      <div class="setting-item">
+        <label for="max-tokens">Max Context Tokens</label>
+        <input type="number" id="max-tokens" value="3098" step="128" min="128">
+      </div>
+      <div class="setting-item">
+          <button id="refresh-models" class="full-width-btn">Refresh Models</button>
+      </div>
+      <div class="setting-item">
+          <button id="clear-chat" class="full-width-btn danger">Clear Chat</button>
       </div>
     </div>
-    <div class="chat-container">
-      <div id="chat-history"></div>
-      <div id="context-indicator" style="display: none;">
-        <span id="context-text"></span>
-        <button id="remove-context" title="Remove Context">&times;</button>
-      </div>
-      <div class="chat-input">
-        <textarea id="prompt-input" placeholder="Type your message..."></textarea>
-        <button id="send-prompt">Send</button>
-        <button id="stop-generating" style="display: none;">Stop</button>
-      </div>
+
+    <!-- Chat Area -->
+    <div id="chat-history" class="chat-history">
+        <!-- Welcome/Empty State could go here -->
     </div>
-    <div class="actions">
-        <button id="summarize-page">Summarize Page</button>
-        <button id="clear-chat">Clear Chat</button>
+
+    <!-- Context Indicator (Floating or above input) -->
+    <div id="context-indicator" class="context-indicator" style="display: none;">
+      <span class="context-icon">📄</span>
+      <span id="context-text"></span>
+      <button id="remove-context" title="Remove">&times;</button>
+    </div>
+
+    <!-- Bottom Input Area -->
+    <div class="input-area">
+       <!-- Action Chips (Summarize Page) -->
+       <div class="action-chips">
+           <button id="summarize-page" class="chip">Summarize this page</button>
+       </div>
+
+      <div class="input-box">
+        <textarea id="prompt-input" placeholder="Ask follow up..."></textarea>
+        
+        <div class="input-toolbar">
+          <div class="left-tools">
+            <button class="tool-btn" title="Context (Auto)" disabled>📝</button> <!-- Visual placeholder for now -->
+            <button class="tool-btn" title="Attach" disabled>zk</button> <!-- Visual placeholder -->
+          </div>
+          <div class="right-tools">
+            <div class="model-selector-wrapper">
+                <select id="model-select"></select>
+                <span class="dropdown-arrow">▼</span>
+            </div>
+            <button id="send-prompt" class="send-btn">
+                <span class="arrow-up">↑</span>
+            </button>
+            <button id="stop-generating" class="stop-btn" style="display: none;">⏹</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-    <div id="toast" class="toast hidden"></div>
+
+  <div id="toast" class="toast hidden"></div>
   <script src="markdown_parser.js"></script>
   <script src="sidebar.js"></script>
 </body>

@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Also check when mouse enters the chat area, to catch selections made while sidebar was open
   document
-    .querySelector(".chat-container")
+    .querySelector(".app-container")
     .addEventListener("mouseenter", checkSelection);
 
   removeContextBtn.addEventListener("click", () => {
@@ -116,6 +116,11 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const response = await fetch(`${baseUrl}/models`);
       const data = await response.json();
+      
+      if (!data.data || data.data.length === 0) {
+          throw new Error("No models found");
+      }
+
       modelSelect.innerHTML = "";
       data.data.forEach((model) => {
         const option = document.createElement("option");
@@ -126,6 +131,9 @@ document.addEventListener("DOMContentLoaded", () => {
       loadSelectedModel();
     } catch (error) {
       console.error("Error fetching models:", error);
+      settingsPanel.classList.remove("collapsed");
+      modelSelect.innerHTML = "<option disabled selected>No Connection</option>";
+      showToast("Could not connect to LLM Server. Check URL.", "warning");
     }
   };
 
@@ -144,14 +152,33 @@ document.addEventListener("DOMContentLoaded", () => {
     browser.storage.local.set({ selectedModel: modelSelect.value });
   };
 
+  const headerModelName = document.getElementById('header-model-name');
+  const headerModelId = document.getElementById('header-model-id');
+
+  const updateHeader = () => {
+      const selected = modelSelect.value;
+      if (selected) {
+          headerModelName.textContent = selected;
+          headerModelId.textContent = selected;
+      } else {
+           headerModelName.textContent = "Select Model";
+           headerModelId.textContent = "Local LLM";
+      }
+  };
+
   const loadSelectedModel = async () => {
     const data = await browser.storage.local.get("selectedModel");
     if (data.selectedModel) {
       modelSelect.value = data.selectedModel;
     }
+    updateHeader();
   };
 
-  modelSelect.addEventListener("change", saveSelectedModel);
+  modelSelect.addEventListener("change", () => {
+      saveSelectedModel();
+      updateHeader();
+  });
+  
   const saveBaseUrlBtn = document.getElementById("save-base-url");
   saveBaseUrlBtn.addEventListener("click", saveBaseUrl);
 
@@ -179,13 +206,54 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const appendUserMessage = (text) => {
+  const appendUserMessage = (text, metadata = null) => {
       const messageElement = document.createElement('div');
       messageElement.classList.add('message', 'user');
       
       const messageContent = document.createElement('div');
       messageContent.classList.add('message-content');
       messageContent.textContent = text;
+      
+      if (metadata) {
+          const card = document.createElement('div');
+          card.className = 'page-card';
+          
+          if (metadata.favIconUrl) {
+              const icon = document.createElement('img');
+              icon.className = 'page-card-icon';
+              icon.src = metadata.favIconUrl;
+              card.appendChild(icon);
+          } else {
+               const icon = document.createElement('div');
+               icon.className = 'page-card-icon';
+               icon.textContent = '📄';
+               icon.style.display = 'flex';
+               icon.style.alignItems = 'center';
+               icon.style.justifyContent = 'center';
+               card.appendChild(icon);
+          }
+          
+          const info = document.createElement('div');
+          info.className = 'page-card-info';
+          
+          const title = document.createElement('div');
+          title.className = 'page-card-title';
+          title.textContent = metadata.title || 'Web Page';
+          
+          const url = document.createElement('div');
+          url.className = 'page-card-url';
+          try {
+             const urlObj = new URL(metadata.url);
+             url.textContent = urlObj.hostname;
+          } catch (e) {
+             url.textContent = metadata.url;
+          }
+          
+          info.appendChild(title);
+          info.appendChild(url);
+          card.appendChild(info);
+          messageContent.appendChild(card);
+      }
       
       messageElement.appendChild(messageContent);
       chatHistory.appendChild(messageElement);
@@ -244,47 +312,50 @@ document.addEventListener("DOMContentLoaded", () => {
       const decoder = new TextDecoder();
       let partialResponse = "";
 
-      const push = () => {
-        reader.read().then(({ done, value }) => {
-          if (done) {
-            saveChatHistory();
-            sendPromptBtn.style.display = "block";
-            stopGeneratingBtn.style.display = "none";
-            return;
-          }
-          partialResponse += decoder.decode(value, { stream: true });
-          const lines = partialResponse.split("\n");
-          partialResponse = lines.pop();
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = line.substring(6);
-              if (data.trim() === "[DONE]") {
-                saveChatHistory();
-                sendPromptBtn.style.display = "block";
-                stopGeneratingBtn.style.display = "none";
-                return;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        partialResponse += decoder.decode(value, { stream: true });
+        const lines = partialResponse.split("\n");
+        partialResponse = lines.pop();
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.substring(6);
+            if (data.trim() === "[DONE]") {
+              break; 
+            }
+            try {
+              const json = JSON.parse(data);
+              if (
+                json.choices &&
+                json.choices[0].delta &&
+                json.choices[0].delta.content
+              ) {
+                const content = json.choices[0].delta.content;
+                fullContent += content;
+                messageContent.innerHTML = parseMarkdown(fullContent);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
               }
-              try {
-                const json = JSON.parse(data);
-                if (
-                  json.choices &&
-                  json.choices[0].delta &&
-                  json.choices[0].delta.content
-                ) {
-                  const content = json.choices[0].delta.content;
-                  fullContent += content;
-                  messageContent.innerHTML = parseMarkdown(fullContent);
-                  chatHistory.scrollTop = chatHistory.scrollHeight;
-                }
-              } catch (error) {
-                console.error("Error parsing JSON:", error);
-              }
+            } catch (error) {
+              console.error("Error parsing JSON:", error);
             }
           }
-          push();
-        });
-      };
-      push();
+        }
+        // If we broke out of inner loop due to [DONE], check if we should break outer
+        // Actually [DONE] message usually comes as a single line.
+        // If we break inner loop, we still continue outer loop unless we check flag.
+        // But [DONE] usually means stream is closing.
+        // Let's just let the loop continue until `reader.read()` returns done: true next time.
+        // Or strictly, if [DONE] received, we can probably just stop.
+      }
+
+      // Cleanup on success
+      saveChatHistory();
+      sendPromptBtn.style.display = "block";
+      stopGeneratingBtn.style.display = "none";
+
     } catch (error) {
       if (loadingIndicator.parentNode) {
         chatHistory.removeChild(loadingIndicator);
@@ -370,6 +441,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     if (!tabs || tabs.length === 0) return;
     const tabId = tabs[0].id;
+    const tab = tabs[0];
 
     try {
       const response = await browser.tabs.sendMessage(tabId, {
@@ -387,7 +459,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const prompt = `Summarize the following web page content: ${content}`;
-        appendUserMessage("Summarize this page");
+        appendUserMessage("Summarize this page", {
+            title: tab.title,
+            url: tab.url,
+            favIconUrl: tab.favIconUrl
+        });
         streamResponse(prompt);
       }
     } catch (error) {
