@@ -8,6 +8,63 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearChatBtn = document.getElementById('clear-chat');
     const chatHistory = document.getElementById('chat-history');
 
+    const contextIndicator = document.getElementById('context-indicator');
+    const contextText = document.getElementById('context-text');
+    const removeContextBtn = document.getElementById('remove-context');
+    
+    let selectedContextText = '';
+    let lastIgnoredSelection = '';
+
+    const updateContextDisplay = (text) => {
+        if (text) {
+            selectedContextText = text;
+            contextText.textContent = `Selected Context: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`;
+            contextIndicator.style.display = 'flex';
+            // If we are setting a new context, we can forget about what was previously ignored
+            lastIgnoredSelection = ''; 
+        } else {
+            selectedContextText = '';
+            contextText.textContent = '';
+            contextIndicator.style.display = 'none';
+        }
+    };
+
+    const checkSelection = async () => {
+        try {
+            const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            if (tabs && tabs.length > 0) {
+                const response = await browser.tabs.sendMessage(tabs[0].id, { action: "get_selection" });
+                const currentSelection = (response && response.selection) ? response.selection.trim() : '';
+                
+                // If the selection has changed from what we explicitly ignored, reset the ignore state.
+                // This handles the case where user unselects or selects something else.
+                // We check if currentSelection is DIFFERENT from lastIgnoredSelection.
+                // However, if we just ignored "A", and selection is still "A", we don't want to reset.
+                // If selection becomes "B" or "", we reset.
+                if (currentSelection !== lastIgnoredSelection) {
+                    lastIgnoredSelection = '';
+                }
+
+                if (currentSelection && currentSelection !== selectedContextText && currentSelection !== lastIgnoredSelection) {
+                    updateContextDisplay(currentSelection);
+                }
+            }
+        } catch (error) {
+           // console.log('Error getting selection:', error); 
+           // content script might not be ready or page restricted
+        }
+    };
+
+    promptInput.addEventListener('focus', checkSelection);
+    
+    // Also check when mouse enters the chat area, to catch selections made while sidebar was open
+    document.querySelector('.chat-container').addEventListener('mouseenter', checkSelection);
+
+    removeContextBtn.addEventListener('click', () => {
+        lastIgnoredSelection = selectedContextText;
+        updateContextDisplay('');
+    });
+
     const stopGeneratingBtn = document.getElementById('stop-generating');
     let abortController = null;
 
@@ -188,19 +245,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const prompt = promptInput.value;
         if (prompt) {
             let finalPrompt = prompt;
-            try {
-                const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-                if (tabs && tabs.length > 0) {
-                    const response = await browser.tabs.sendMessage(tabs[0].id, { action: "get_selection" });
-                    if (response && response.selection) {
-                        finalPrompt = `Context:\n${response.selection}\n\nQuestion:\n${prompt}`;
-                    }
-                }
-            } catch (error) {
-                console.log('Error getting selection:', error);
+            if (selectedContextText) {
+                finalPrompt = `Context:\n${selectedContextText}\n\nQuestion:\n${prompt}`;
             }
+            
             streamResponse(finalPrompt);
             promptInput.value = '';
+            
+            // Reset context
+            updateContextDisplay('');
+            lastIgnoredSelection = '';
         }
     });
 

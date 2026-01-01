@@ -20,6 +20,10 @@
     </div>
     <div class="chat-container">
       <div id="chat-history"></div>
+      <div id="context-indicator" style="display: none;">
+        <span id="context-text"></span>
+        <button id="remove-context" title="Remove Context">&times;</button>
+      </div>
       <div class="chat-input">
         <textarea id="prompt-input" placeholder="Type your message..."></textarea>
         <button id="send-prompt">Send</button>
