@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const contextText = document.getElementById("context-text");
   const removeContextBtn = document.getElementById("remove-context");
   const summarizeSelectionBtn = document.getElementById("summarize-selection");
+  const addPageContextBtn = document.getElementById("add-page-context");
 
   const settingsToggle = document.getElementById("settings-toggle-toolbar");
   const settingsPanel = document.getElementById("settings-panel");
@@ -75,22 +76,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let selectedContextText = "";
   let lastIgnoredSelection = "";
+  let isPageContext = false;
 
-  const updateContextDisplay = (text) => {
+  const updateContextDisplay = (text, isPage = false) => {
     if (text) {
       selectedContextText = text;
-      contextText.textContent = `Selected Context: "${text.substring(0, 50)}${
+      isPageContext = isPage;
+      contextText.textContent = `${isPage ? 'Page' : 'Selected'} Context: "${text.substring(0, 50)}${
         text.length > 50 ? "..." : ""
       }"`;
       contextIndicator.style.display = "flex";
-      if (summarizeSelectionBtn) summarizeSelectionBtn.style.display = "";
+      
+      // Hide summarize selection if it's the full page context
+      if (summarizeSelectionBtn) summarizeSelectionBtn.style.display = isPage ? "none" : "";
+      if (addPageContextBtn) addPageContextBtn.style.display = "none";
+      
       // If we are setting a new context, we can forget about what was previously ignored
       lastIgnoredSelection = "";
     } else {
       selectedContextText = "";
+      isPageContext = false;
       contextText.textContent = "";
       contextIndicator.style.display = "none";
       if (summarizeSelectionBtn) summarizeSelectionBtn.style.display = "none";
+      if (addPageContextBtn) addPageContextBtn.style.display = "";
     }
   };
 
@@ -100,6 +109,38 @@ document.addEventListener("DOMContentLoaded", () => {
         const prompt = `Summarize the following text:\n\n${selectedContextText}`;
         appendUserMessage("Summarize selection");
         streamResponse(prompt);
+      }
+    });
+  }
+
+  const getPageContent = async () => {
+    const tabs = await browser.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (!tabs || tabs.length === 0) return null;
+    const tab = tabs[0];
+
+    try {
+      const response = await browser.tabs.sendMessage(tab.id, {
+        action: "get_full_page",
+      });
+      if (response && response.content) {
+        return { content: response.content, tab };
+      }
+    } catch (error) {
+      console.error("Error getting page content:", error);
+    }
+    return null;
+  };
+
+  if (addPageContextBtn) {
+    addPageContextBtn.addEventListener("click", async () => {
+      const result = await getPageContent();
+      if (result) {
+        updateContextDisplay(result.content, true);
+      } else {
+        showToast("Could not get page content", "warning");
       }
     });
   }
@@ -131,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
           currentSelection !== selectedContextText &&
           currentSelection !== lastIgnoredSelection
         ) {
-          updateContextDisplay(currentSelection);
+          updateContextDisplay(currentSelection, false);
         }
       }
     } catch (error) {
@@ -499,39 +540,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // ... existing code ...
 
   summarizePageBtn.addEventListener("click", async () => {
-    const tabs = await browser.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (!tabs || tabs.length === 0) return;
-    const tabId = tabs[0].id;
-    const tab = tabs[0];
+    const result = await getPageContent();
+    if (result) {
+      const { content, tab } = result;
+      const maxTokens =
+        parseInt(maxTokensInput.value, 10) || DEFAULT_CONTEXT_TOKEN_LIMIT;
+      const charLimit = maxTokens * 4;
+      let finalContent = content;
 
-    try {
-      const response = await browser.tabs.sendMessage(tabId, {
-        action: "get_full_page",
-      });
-      if (response && response.content) {
-        const maxTokens =
-          parseInt(maxTokensInput.value, 10) || DEFAULT_CONTEXT_TOKEN_LIMIT;
-        const charLimit = maxTokens * 4;
-        let content = response.content;
-
-        if (content.length > charLimit) {
-          content = content.substring(0, charLimit);
-          showToast(`Page content truncated to fit token limit.`, "warning");
-        }
-
-        const prompt = `Summarize the following web page content: ${content}`;
-        appendUserMessage("Summarize this page", {
-          title: tab.title,
-          url: tab.url,
-          favIconUrl: tab.favIconUrl,
-        });
-        streamResponse(prompt);
+      if (finalContent.length > charLimit) {
+        finalContent = finalContent.substring(0, charLimit);
+        showToast(`Page content truncated to fit token limit.`, "warning");
       }
-    } catch (error) {
-      console.error("Error getting page content:", error);
+
+      const prompt = `Summarize the following web page content: ${finalContent}`;
+      appendUserMessage("Summarize this page", {
+        title: tab.title,
+        url: tab.url,
+        favIconUrl: tab.favIconUrl,
+      });
+      streamResponse(prompt);
     }
   });
 
