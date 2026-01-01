@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let abortController = null;
 
     const getModels = async () => {
-        baseUrl = baseUrlInput.value;
+        const baseUrl = baseUrlInput.value;
         try {
             const response = await fetch(`${baseUrl}/models`);
             const data = await response.json();
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const streamResponse = async (prompt) => {
-        baseUrl = baseUrlInput.value;
+        const baseUrl = baseUrlInput.value;
         sendPromptBtn.style.display = 'none';
         stopGeneratingBtn.style.display = 'block';
         abortController = new AbortController();
@@ -184,10 +184,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    sendPromptBtn.addEventListener('click', () => {
+    sendPromptBtn.addEventListener('click', async () => {
         const prompt = promptInput.value;
         if (prompt) {
-            streamResponse(prompt);
+            let finalPrompt = prompt;
+            try {
+                const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                if (tabs && tabs.length > 0) {
+                    const response = await browser.tabs.sendMessage(tabs[0].id, { action: "get_selection" });
+                    if (response && response.selection) {
+                        finalPrompt = `Context:\n${response.selection}\n\nQuestion:\n${prompt}`;
+                    }
+                }
+            } catch (error) {
+                console.log('Error getting selection:', error);
+            }
+            streamResponse(finalPrompt);
             promptInput.value = '';
         }
     });
@@ -220,29 +232,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     refreshModelsBtn.addEventListener('click', () => {
-        baseUrl = baseUrlInput.value;
         getModels();
     });
 
-    // Initial model load
-    getModels();
-    loadChatHistory();
-    loadBaseUrl();
-
-    const loadContext = async () => {
-        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-        if (!tabs || tabs.length === 0) return;
-        const tabId = tabs[0].id;
-
-        try {
-            const response = await browser.tabs.sendMessage(tabId, { action: "get_selection" });
-            if (response && response.selection) {
-                promptInput.value = `> "${response.selection}"\n\n`;
-            }
-        } catch (error) {
-            console.error("Could not get selection:", error);
-        }
+    const init = async () => {
+        await loadBaseUrl();
+        getModels();
+        loadChatHistory();
     };
 
-    loadContext();
+    init();
 });
