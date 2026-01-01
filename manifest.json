@@ -12,9 +12,14 @@
     "http://localhost/*",
     "http://127.0.0.1/*"
   ],
+  "action": {
+    "default_icon": "assets/logo/icon_48.png",
+    "default_title": "Open Rallx Sidebar"
+  },
   "sidebar_action": {
     "default_panel": "sidebar.html",
-    "default_icon": "assets/logo/icon_48.png"
+    "default_icon": "assets/logo/icon_48.png",
+    "default_title": "Rallx Browser AI"
   },
   "background": {
     "scripts": ["background.js"]
