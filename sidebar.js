@@ -9,12 +9,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatHistory = document.getElementById("chat-history");
 
   const contextIndicator = document.getElementById("context-indicator");
-  // const contextText = document.getElementById("context-text"); // Removed
   const contextTitle = document.getElementById("context-title");
   const contextDetails = document.getElementById("context-details");
   const contextIcon = document.getElementById("context-icon");
   const contextIconPlaceholder = document.getElementById("context-icon-placeholder");
-  
   const removeContextBtn = document.getElementById("remove-context");
   const summarizeSelectionBtn = document.getElementById("summarize-selection");
   const addPageContextBtn = document.getElementById("add-page-context");
@@ -431,6 +429,9 @@ document.addEventListener("DOMContentLoaded", () => {
     chatHistory.appendChild(loadingIndicator);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
+    const startTime = Date.now();
+    let tokenCount = 0;
+
     try {
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
@@ -453,11 +454,25 @@ document.addEventListener("DOMContentLoaded", () => {
       messageContent.classList.add("message-content");
       messageContent.style.flexGrow = "1";
 
+      // Footer for button and stats
+      const footer = document.createElement("div");
+      footer.style.display = "flex";
+      footer.style.alignItems = "center";
+      footer.style.marginTop = "5px";
+
       const copyButton = document.createElement("button");
       const copyIcon = document.createElement("img");
       copyIcon.src = "assets/icons/copy.svg";
       copyIcon.className = "icon-img";
       copyButton.appendChild(copyIcon);
+      // Remove margin from button since footer handles spacing or button has its own
+      copyButton.style.marginLeft = "0"; 
+
+      const statsSpan = document.createElement("span");
+      statsSpan.style.fontSize = "11px";
+      statsSpan.style.color = "var(--text-secondary)";
+      statsSpan.style.marginLeft = "10px";
+      statsSpan.textContent = "Generating...";
 
       let fullContent = "";
 
@@ -466,7 +481,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       messageElement.appendChild(messageContent);
-      messageElement.appendChild(copyButton);
+      footer.appendChild(copyButton);
+      footer.appendChild(statsSpan);
+      messageElement.appendChild(footer);
+      
       chatHistory.appendChild(messageElement);
       chatHistory.scrollTop = chatHistory.scrollHeight;
 
@@ -490,6 +508,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             try {
               const json = JSON.parse(data);
+              
+              // Check for usage info if available
+              if (json.usage && json.usage.completion_tokens) {
+                  // If usage is provided, use it (often in last chunk)
+                  // tokenCount = json.usage.completion_tokens;
+              }
+
               if (
                 json.choices &&
                 json.choices[0].delta &&
@@ -497,6 +522,7 @@ document.addEventListener("DOMContentLoaded", () => {
               ) {
                 const content = json.choices[0].delta.content;
                 fullContent += content;
+                tokenCount++; // Approximation per chunk if usage not sent
                 messageContent.innerHTML = parseMarkdown(fullContent);
                 chatHistory.scrollTop = chatHistory.scrollHeight;
               }
@@ -505,13 +531,17 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           }
         }
-        // If we broke out of inner loop due to [DONE], check if we should break outer
-        // Actually [DONE] message usually comes as a single line.
-        // If we break inner loop, we still continue outer loop unless we check flag.
-        // But [DONE] usually means stream is closing.
-        // Let's just let the loop continue until `reader.read()` returns done: true next time.
-        // Or strictly, if [DONE] received, we can probably just stop.
       }
+
+      // Final Stats Calculation
+      const endTime = Date.now();
+      const duration = (endTime - startTime) / 1000;
+      const tps = duration > 0 ? (tokenCount / duration).toFixed(1) : 0;
+      const modelName = modelSelect.value.split("/").pop();
+      // Capitalize first letter for display
+      const displayModel = modelName.charAt(0).toUpperCase() + modelName.slice(1);
+      
+      statsSpan.textContent = `${displayModel} | ${tokenCount} tokens | ${tps} t/s`;
 
       // Cleanup on success
       saveChatHistory();
