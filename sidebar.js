@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const baseUrlInput = document.getElementById("base-url");
+  const apiKeyInput = document.getElementById("api-key");
   const refreshModelsBtn = document.getElementById("refresh-models");
   const modelSelect = document.getElementById("model-select");
   const promptInput = document.getElementById("prompt-input");
@@ -336,8 +337,14 @@ ${selectedContextText}`;
 
   const getModels = async () => {
     const baseUrl = baseUrlInput.value;
+    const apiKey = apiKeyInput.value;
+    const headers = {};
+    if (apiKey) {
+        headers["Authorization"] = `Bearer ${apiKey}`;
+    }
+    
     try {
-      const response = await fetch(`${baseUrl}/models`);
+      const response = await fetch(`${baseUrl}/models`, { headers });
       const data = await response.json();
 
       if (!data.data || data.data.length === 0) {
@@ -380,9 +387,12 @@ ${selectedContextText}`;
   };
 
   const loadBaseUrl = async () => {
-    const data = await browser.storage.local.get("baseUrl");
+    const data = await browser.storage.local.get(["baseUrl", "apiKey"]);
     if (data.baseUrl) {
       baseUrlInput.value = data.baseUrl;
+    }
+    if (data.apiKey) {
+      apiKeyInput.value = data.apiKey;
     }
   };
 
@@ -407,6 +417,34 @@ ${selectedContextText}`;
     saveBaseUrl();
     getModels();
   });
+
+  const saveApiKeyBtn = document.getElementById("save-api-key");
+  const toggleApiKeyVisibilityBtn = document.getElementById("toggle-api-key-visibility");
+  
+  const saveApiKey = () => {
+    browser.storage.local.set({ apiKey: apiKeyInput.value });
+  };
+  
+  if (saveApiKeyBtn) {
+      saveApiKeyBtn.addEventListener("click", () => {
+        saveApiKey();
+        getModels();
+      });
+  }
+
+  if (toggleApiKeyVisibilityBtn) {
+      toggleApiKeyVisibilityBtn.addEventListener("click", () => {
+          const type = apiKeyInput.getAttribute("type") === "password" ? "text" : "password";
+          apiKeyInput.setAttribute("type", type);
+          
+          const icon = toggleApiKeyVisibilityBtn.querySelector("img");
+          if (type === "text") {
+              icon.src = "assets/icons/visibility_on.svg";
+          } else {
+              icon.src = "assets/icons/visibility_off.svg";
+          }
+      });
+  }
 
   const clearChatToolbar = document.getElementById("clear-chat-toolbar");
   const refreshModelsToolbar = document.getElementById(
@@ -531,13 +569,19 @@ ${selectedContextText}`;
 
     const startTime = Date.now();
     let tokenCount = 0;
+    
+    const apiKey = apiKeyInput.value;
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    if (apiKey) {
+        headers["Authorization"] = `Bearer ${apiKey}`;
+    }
 
     try {
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           model: modelSelect.value,
           messages: messages,

@@ -235,10 +235,34 @@ html {
 .input-group {
   display: flex;
   gap: 5px;
+  align-items: center;
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 32px; /* Space for the eye icon */
+}
+
+.password-wrapper #toggle-api-key-visibility {
+  position: absolute;
+  right: 4px;
+  background: transparent;
+  padding: 4px;
+}
+.password-wrapper #toggle-api-key-visibility:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+input[type="password"] {
   background-color: var(--input-bg);
   border: 1px solid var(--border-color);
   color: var(--text-primary);

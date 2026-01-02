@@ -21,8 +21,26 @@
             </div>
         </div>
         <div class="input-group">
-            <input type="text" id="base-url" value="http://localhost:1234/v1">
+            <input type="text" id="base-url" value="http://localhost:11434/v1">
             <button id="save-base-url">Save</button>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="label-with-info">
+            <label for="api-key">API Key (Optional)</label>
+            <div class="info-icon-wrapper">
+                <img src="assets/icons/info.svg" class="info-icon-img">
+                <span class="tooltip-text tooltip-bottom">API Key for authentication if your provider requires it. Stored locally.</span>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="password-wrapper">
+                <input type="password" id="api-key" placeholder="sk-...">
+                <button id="toggle-api-key-visibility" class="icon-button" title="Show/Hide API Key">
+                    <img src="assets/icons/visibility_off.svg" class="icon-img" alt="Show/Hide">
+                </button>
+            </div>
+            <button id="save-api-key">Save</button>
         </div>
       </div>
       <div class="setting-item">
