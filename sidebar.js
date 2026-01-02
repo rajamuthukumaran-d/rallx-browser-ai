@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeSettingsBtn = document.getElementById("close-settings");
 
   const enableHistoryCheckbox = document.getElementById("enable-history");
+  const enableRagCheckbox = document.getElementById("enable-rag");
   const maxTokensInput = document.getElementById("max-tokens");
 
   if (settingsToggle) {
@@ -673,7 +674,7 @@ ${selectedContextText}`;
         if (contextToUse.length + overhead > charLimit) {
           const availableSpace = charLimit - overhead;
           if (availableSpace > 0) {
-            if (typeof RAGEngine !== 'undefined') {
+            if (typeof RAGEngine !== 'undefined' && enableRagCheckbox.checked) {
                 const retrieved = RAGEngine.retrieve(selectedContextText, prompt, availableSpace);
                 if (retrieved && retrieved.length < selectedContextText.length) {
                     contextToUse = retrieved;
@@ -772,18 +773,26 @@ ${prompt}`;
       updateInputPlaceholder();
   };
 
+  const saveEnableRag = () => {
+      browser.storage.local.set({ enableRag: enableRagCheckbox.checked });
+  };
+
   const loadSettings = async () => {
-    const data = await browser.storage.local.get(["maxTokens", "enableHistory"]);
+    const data = await browser.storage.local.get(["maxTokens", "enableHistory", "enableRag"]);
     if (data.maxTokens) {
       maxTokensInput.value = data.maxTokens;
     }
     if (data.enableHistory !== undefined) {
         enableHistoryCheckbox.checked = data.enableHistory;
     }
+    if (data.enableRag !== undefined) {
+        enableRagCheckbox.checked = data.enableRag;
+    }
   };
 
   maxTokensInput.addEventListener("change", saveMaxTokens);
   enableHistoryCheckbox.addEventListener("change", saveEnableHistory);
+  enableRagCheckbox.addEventListener("change", saveEnableRag);
 
   summarizePageBtn.addEventListener("click", async () => {
     if (!modelSelect.value) {
@@ -799,24 +808,31 @@ ${prompt}`;
       let finalContent = content;
 
       if (finalContent.length > charLimit) {
-        const introLimit = Math.floor(charLimit * 0.2);
-        const outroLimit = Math.floor(charLimit * 0.2);
-        const middleLimit = charLimit - introLimit - outroLimit;
-        const intro = finalContent.substring(0, introLimit);
-        const outro = finalContent.substring(finalContent.length - outroLimit);
-        const middleText = finalContent.substring(introLimit, finalContent.length - outroLimit);
-        let middle = "";
-        if (middleText.length > 0) {
-            const step = Math.floor(middleText.length / 3);
-            const chunkLen = Math.floor(middleLimit / 3);
-            for (let i = 0; i < 3; i++) {
-                const start = i * step;
-                const slice = middleText.substring(start, start + chunkLen);
-                middle += "\n\n...[skipped]...\n\n" + slice;
+        if (enableRagCheckbox.checked) {
+            // Smart Selection Strategy
+            const introLimit = Math.floor(charLimit * 0.2);
+            const outroLimit = Math.floor(charLimit * 0.2);
+            const middleLimit = charLimit - introLimit - outroLimit;
+            const intro = finalContent.substring(0, introLimit);
+            const outro = finalContent.substring(finalContent.length - outroLimit);
+            const middleText = finalContent.substring(introLimit, finalContent.length - outroLimit);
+            let middle = "";
+            if (middleText.length > 0) {
+                const step = Math.floor(middleText.length / 3);
+                const chunkLen = Math.floor(middleLimit / 3);
+                for (let i = 0; i < 3; i++) {
+                    const start = i * step;
+                    const slice = middleText.substring(start, start + chunkLen);
+                    middle += "\n\n...[skipped]...\n\n" + slice;
+                }
             }
+            finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
+            showToast(`Page content summarized via smart selection to fit limit.`, "info");
+        } else {
+            // Simple Truncation
+            finalContent = finalContent.substring(0, charLimit) + "... (truncated)";
+            showToast(`Page content truncated to fit limit.`, "warning");
         }
-        finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
-        showToast(`Page content summarized via smart selection to fit limit.`, "info");
       }
 
       const prompt = `Summarize the following web page content: ${finalContent}`;
