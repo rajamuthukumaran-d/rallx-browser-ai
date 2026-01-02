@@ -136,7 +136,98 @@ html {
   gap: 5px;
 }
 
-.setting-item label {
+.setting-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.label-with-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+}
+
+.info-icon-img {
+  width: 14px;
+  height: 14px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.info-icon-wrapper:hover .info-icon-img {
+  opacity: 1;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  width: 200px;
+  background-color: #2d2d2d;
+  color: #e8eaed;
+  text-align: left;
+  border-radius: 6px;
+  padding: 8px 10px;
+  position: absolute;
+  z-index: 1000;
+  bottom: 135%;
+  left: 50%;
+  transform: translateX(-50%); /* Better centering */
+  margin-left: 0;
+  opacity: 0;
+  transition: opacity 0.2s, bottom 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: normal;
+  border: 1px solid var(--border-color);
+  pointer-events: none;
+}
+
+/* Arrow for tooltip */
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--border-color) transparent transparent transparent;
+}
+
+.info-icon-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+  bottom: 125%;
+}
+
+/* Tooltip Bottom Variant */
+.tooltip-text.tooltip-bottom {
+  bottom: auto;
+  top: 135%;
+  transition: opacity 0.2s, top 0.2s;
+}
+
+.tooltip-text.tooltip-bottom::after {
+  top: auto;
+  bottom: 100%;
+  border-color: transparent transparent var(--border-color) transparent;
+}
+
+.info-icon-wrapper:hover .tooltip-text.tooltip-bottom {
+  bottom: auto;
+  top: 125%;
+}
+
+.setting-item label,
+.setting-item-row label {
   font-size: 12px;
   color: var(--text-secondary);
 }
