@@ -633,15 +633,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (contextToUse.length + overhead > charLimit) {
           const availableSpace = charLimit - overhead;
+          
           if (availableSpace > 0) {
-            contextToUse =
-              contextToUse.substring(0, availableSpace) + "... (truncated)";
+            // Use RAG to find relevant chunks instead of blind truncation
+            if (typeof RAGEngine !== 'undefined') {
+                const retrieved = RAGEngine.retrieve(selectedContextText, prompt, availableSpace);
+                // If RAG returns something useful (and it's different/shorter than full text which we know is too long)
+                if (retrieved && retrieved.length < selectedContextText.length) {
+                    contextToUse = retrieved;
+                    showToast("Large context: Used relevant snippets.", "info");
+                } else {
+                    // Fallback if RAG fails or returns everything (shouldn't happen if logic is right)
+                    contextToUse = contextToUse.substring(0, availableSpace) + "... (truncated)";
+                    showToast("Context truncated to fit token limit.", "warning");
+                }
+            } else {
+                contextToUse = contextToUse.substring(0, availableSpace) + "... (truncated)";
+                showToast("Context truncated to fit token limit.", "warning");
+            }
           } else {
             // If prompt is huge, we might not have space for context.
             // Prioritize prompt, drop context or truncate heavily.
             contextToUse = contextToUse.substring(0, 100) + "... (truncated)";
           }
-          showToast("Context truncated to fit token limit.", "warning");
         }
         finalPrompt = `Context:\n${contextToUse}\n\nQuestion:\n${prompt}`;
       }
@@ -690,8 +704,37 @@ document.addEventListener("DOMContentLoaded", () => {
       let finalContent = content;
 
       if (finalContent.length > charLimit) {
-        finalContent = finalContent.substring(0, charLimit);
-        showToast(`Page content truncated to fit token limit.`, "warning");
+        // Smart Selection Strategy
+        const introLimit = Math.floor(charLimit * 0.2);
+        const outroLimit = Math.floor(charLimit * 0.2);
+        const middleLimit = charLimit - introLimit - outroLimit;
+
+        // 1. Introduction
+        const intro = finalContent.substring(0, introLimit);
+
+        // 2. Conclusion
+        const outro = finalContent.substring(finalContent.length - outroLimit);
+
+        // 3. Middle Chunks (Spread out)
+        // We take the middle section of the original text
+        const middleText = finalContent.substring(introLimit, finalContent.length - outroLimit);
+        
+        let middle = "";
+        if (middleText.length > 0) {
+            // Split middleText into 3 parts and take a slice from each
+            const step = Math.floor(middleText.length / 3);
+            const chunkLen = Math.floor(middleLimit / 3);
+            
+            for (let i = 0; i < 3; i++) {
+                const start = i * step;
+                // Ensure we don't go out of bounds
+                const slice = middleText.substring(start, start + chunkLen);
+                middle += "\n\n...[skipped]...\n\n" + slice;
+            }
+        }
+
+        finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
+        showToast(`Page content summarized via smart selection to fit limit.`, "info");
       }
 
       const prompt = `Summarize the following web page content: ${finalContent}`;
