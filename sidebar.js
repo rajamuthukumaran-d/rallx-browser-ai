@@ -446,6 +446,36 @@ ${selectedContextText}`;
     getModels();
   });
 
+  const pickProviderBtn = document.getElementById("pick-provider");
+  const providerDropdown = document.getElementById("provider-dropdown");
+  
+  if (pickProviderBtn && providerDropdown) {
+      pickProviderBtn.addEventListener("click", (e) => {
+          e.stopPropagation(); // Prevent document click from closing immediately
+          providerDropdown.classList.toggle("hidden");
+      });
+
+      const options = providerDropdown.querySelectorAll(".provider-option");
+      options.forEach(option => {
+          option.addEventListener("click", () => {
+              baseUrlInput.value = option.getAttribute("data-url");
+              providerDropdown.classList.add("hidden");
+          });
+      });
+
+      // Close on outside click logic is mostly handled by the existing document click listener
+      // but that listener specifically targets settings-panel collapse. 
+      // We should add logic for this specific dropdown or make the existing one generic.
+      
+      document.addEventListener("click", (e) => {
+          if (!providerDropdown.classList.contains("hidden") && 
+              !providerDropdown.contains(e.target) && 
+              !pickProviderBtn.contains(e.target)) {
+              providerDropdown.classList.add("hidden");
+          }
+      });
+  }
+
   const saveApiKeyBtn = document.getElementById("save-api-key");
   const toggleApiKeyVisibilityBtn = document.getElementById("toggle-api-key-visibility");
   
