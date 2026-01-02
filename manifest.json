@@ -12,9 +12,14 @@
     "http://localhost/*",
     "http://127.0.0.1/*"
   ],
+  "action": {
+    "default_icon": "assets/logo/icon_48.png",
+    "default_title": "Open Rallx Sidebar"
+  },
   "sidebar_action": {
     "default_panel": "sidebar.html",
-    "default_icon": "icons/icon-48.png"
+    "default_icon": "assets/logo/icon_48.png",
+    "default_title": "Rallx Browser AI"
   },
   "background": {
     "scripts": ["background.js"]
@@ -33,6 +38,9 @@
     }
   },
   "icons": {
-    "48": "icons/icon-48.png"
+    "16": "assets/logo/icon_16.png",
+    "32": "assets/logo/icon_32.png",
+    "48": "assets/logo/icon_48.png",
+    "128": "assets/logo/icon_128.png"
   }
 }

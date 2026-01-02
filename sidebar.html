@@ -3,46 +3,99 @@
 <head>
   <title>Rallx browser AI</title>
   <link rel="stylesheet" type="text/css" href="sidebar.css">
+  <meta charset="utf-8">
 </head>
 <body>
-  <div class="container">
-    <button id="settings-toggle" class="settings-toggle">Configuration</button>
-    <div id="settings-panel">
-      <div class="settings">
-        <label for="base-url">LLM Base URL:</label>
-        <input type="text" id="base-url" value="http://localhost:11434/v1">
-        <div class="actions">
-          <button id="refresh-models">Refresh</button>
-          <button id="save-base-url">Save</button>
+  <div class="app-container">
+    <!-- Settings Panel (Overlay/Collapsible) -->
+    <div id="settings-panel" class="settings-panel collapsed">
+      <button id="close-settings" class="icon-button close-panel-btn" title="Close Settings">
+        <img src="assets/icons/close.svg" class="icon-img" alt="Close">
+      </button>
+      <div class="setting-item">
+        <label for="base-url">LLM Base URL</label>
+        <div class="input-group">
+            <input type="text" id="base-url" value="http://localhost:11434/v1">
+            <button id="save-base-url">Save</button>
         </div>
       </div>
-      <div class="settings">
-          <label for="max-tokens">Max Context Tokens:</label>
-          <input type="number" id="max-tokens" value="3098" step="128" min="128">
+      <div class="setting-item">
+        <label for="max-tokens">Max Context Tokens</label>
+        <input type="number" id="max-tokens" value="3098" step="128" min="128">
       </div>
-      <div class="model-selection">
-        <label for="model-select">Model:</label>
-        <select id="model-select"></select>
+      <div class="setting-item">
+          <button id="refresh-models" class="full-width-btn">Sync Models</button>
       </div>
-    </div>
-    <div class="chat-container">
-      <div id="chat-history"></div>
-      <div id="context-indicator" style="display: none;">
-        <span id="context-text"></span>
-        <button id="remove-context" title="Remove Context">&times;</button>
-      </div>
-      <div class="chat-input">
-        <textarea id="prompt-input" placeholder="Type your message..."></textarea>
-        <button id="send-prompt">Send</button>
-        <button id="stop-generating" style="display: none;">Stop</button>
+      <div class="setting-item">
+          <button id="clear-chat" class="full-width-btn danger">
+            Clear Chat
+          </button>
       </div>
     </div>
-    <div class="actions">
-        <button id="summarize-page">Summarize Page</button>
-        <button id="clear-chat">Clear Chat</button>
+
+    <!-- Chat Area -->
+    <div id="chat-history" class="chat-history">
+        <!-- Welcome/Empty State could go here -->
+    </div>
+
+    <!-- Context Indicator (Floating or above input) -->
+    <div id="context-indicator" class="context-indicator" style="display: none;">
+      <div class="context-card">
+          <div class="context-icon-wrapper">
+              <img id="context-icon" class="context-icon-img" style="display: none;">
+              <div id="context-icon-placeholder" class="context-icon-placeholder">📄</div>
+          </div>
+          <div class="context-info">
+              <div id="context-title" class="context-title">Context</div>
+              <div id="context-details" class="context-details"></div>
+          </div>
+          <button id="remove-context" class="remove-context-btn">
+            <img src="assets/icons/close.svg" class="icon-img" alt="Remove">
+          </button>
+      </div>
+    </div>
+
+    <!-- Bottom Input Area -->
+    <div class="input-area">
+       <!-- Action Chips (Summarize Page) -->
+       <div class="action-chips">
+           <button id="summarize-page" class="chip">Summarize this page</button>
+           <button id="summarize-selection" class="chip" style="display: none;">Summarize selection</button>
+           <button id="add-page-context" class="chip">Ask from this page</button>
+       </div>
+
+      <div class="input-box">
+        <textarea id="prompt-input" placeholder="Ask anything..."></textarea>
+        
+        <div class="input-toolbar">
+          <div class="left-tools">
+            <button id="clear-chat-toolbar" class="tool-btn" title="Clear Chat">
+                <img src="assets/icons/clear_all.svg" class="icon-img" alt="Clear">
+            </button>
+            <button id="settings-toggle-toolbar" class="tool-btn" title="Settings">
+                <img src="assets/icons/settings.svg" class="icon-img" alt="Settings">
+            </button>
+          </div>
+          <div class="right-tools">
+            <div class="model-selector-wrapper">
+                <select id="model-select"></select>
+                <span class="dropdown-arrow">
+                    <img src="assets/icons/arrow_down.svg" class="icon-img" alt="v">
+                </span>
+            </div>
+            <button id="send-prompt" class="send-btn">
+                <img src="assets/icons/send.svg" class="icon-img" alt="Send">
+            </button>
+            <button id="stop-generating" class="stop-btn" style="display: none;">
+                <img src="assets/icons/stop.svg" class="icon-img" alt="Stop">
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-    <div id="toast" class="toast hidden"></div>
+
+  <div id="toast" class="toast hidden"></div>
   <script src="markdown_parser.js"></script>
   <script src="sidebar.js"></script>
 </body>
