@@ -13,15 +13,57 @@
         <img src="assets/icons/close.svg" class="icon-img" alt="Close">
       </button>
       <div class="setting-item">
-        <label for="base-url">LLM Base URL</label>
+        <div class="label-with-info">
+            <label for="base-url">LLM Base URL</label>
+            <div class="info-icon-wrapper">
+                <img src="assets/icons/info.svg" class="info-icon-img">
+                <span class="tooltip-text tooltip-bottom">The API endpoint for your local LLM server (e.g., Ollama or LM Studio).</span>
+            </div>
+        </div>
         <div class="input-group">
-            <input type="text" id="base-url" value="http://localhost:11434/v1">
+            <input type="text" id="base-url" value="http://localhost:1234/v1">
             <button id="save-base-url">Save</button>
         </div>
       </div>
       <div class="setting-item">
-        <label for="max-tokens">Max Context Tokens</label>
+        <div class="label-with-info">
+            <label for="max-tokens">Max Context Tokens</label>
+            <div class="info-icon-wrapper">
+                <img src="assets/icons/info.svg" class="info-icon-img">
+                <span class="tooltip-text">Maximum tokens to use for context (chat history + page content). Higher values use more memory.</span>
+            </div>
+        </div>
         <input type="number" id="max-tokens" value="3098" step="128" min="128">
+      </div>
+      <div class="setting-item-row">
+        <div class="label-with-info">
+            <label for="enable-rag">Smart context</label>
+            <div class="info-icon-wrapper">
+                <img src="assets/icons/info.svg" class="info-icon-img">
+                <span class="tooltip-text">Uses RAG (retrieval) to select relevant text from large pages instead of truncating. This helps maintain context for complex pages and reduces token waste by only sending relevant content to the LLM for processing.</span>
+            </div>
+        </div>
+        <input type="checkbox" id="enable-rag" checked>
+      </div>
+      <div class="setting-item-row">
+        <div class="label-with-info">
+            <label for="enable-history">Enable follow up questions</label>
+            <div class="info-icon-wrapper">
+                <img src="assets/icons/info.svg" class="info-icon-img">
+                <span class="tooltip-text">Allows the AI to remember previous messages in the conversation for context. Disabling this will increase the amount of tokens used for context.</span>
+            </div>
+        </div>
+        <input type="checkbox" id="enable-history" checked>
+      </div>
+      <div class="setting-item-row">
+        <div class="label-with-info">
+            <label for="hide-context-toasts">Hide context warnings</label>
+            <div class="info-icon-wrapper">
+                <img src="assets/icons/info.svg" class="info-icon-img">
+                <span class="tooltip-text">Suppress toast notifications when context is truncated or smart-selected.</span>
+            </div>
+        </div>
+        <input type="checkbox" id="hide-context-toasts" checked>
       </div>
       <div class="setting-item">
           <button id="refresh-models" class="full-width-btn">Sync Models</button>
@@ -97,6 +139,7 @@
 
   <div id="toast" class="toast hidden"></div>
   <script src="markdown_parser.js"></script>
+  <script src="rag.js"></script>
   <script src="sidebar.js"></script>
 </body>
 </html>

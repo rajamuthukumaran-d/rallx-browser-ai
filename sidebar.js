@@ -23,6 +23,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const settingsPanel = document.getElementById("settings-panel");
   const closeSettingsBtn = document.getElementById("close-settings");
 
+  const enableHistoryCheckbox = document.getElementById("enable-history");
+  const enableRagCheckbox = document.getElementById("enable-rag");
+  const hideContextToastsCheckbox = document.getElementById("hide-context-toasts");
+  const maxTokensInput = document.getElementById("max-tokens");
+
   if (settingsToggle) {
     settingsToggle.addEventListener("click", () => {
       // Prevent closing if close button is disabled (means connection error)
@@ -104,9 +109,21 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedContextText = "";
   let lastIgnoredSelection = "";
   let isPageContext = false;
+  
+  // Chat History State
+  let conversationHistory = [];
+  let lastContextSignature = "";
 
   const updateInputPlaceholder = () => {
-    if (selectedContextText) {
+    const enableHistory = enableHistoryCheckbox.checked;
+    const currentContextSig = selectedContextText ? selectedContextText.substring(0, 100) + selectedContextText.length : "NO_CONTEXT";
+    const lastSig = lastContextSignature ? lastContextSignature.substring(0, 100) + lastContextSignature.length : "NO_CONTEXT";
+    
+    const isSameContext = currentContextSig === lastSig;
+
+    if (enableHistory && conversationHistory.length > 0 && isSameContext) {
+      promptInput.placeholder = "Ask a follow-up...";
+    } else if (selectedContextText) {
       promptInput.placeholder = isPageContext
         ? "Ask about this page..."
         : "Ask about selection...";
@@ -155,23 +172,17 @@ document.addEventListener("DOMContentLoaded", () => {
         contextIconPlaceholder.textContent = isPage ? "📄" : "📝";
       }
 
-      contextIndicator.style.display = "block"; // or flex, handled by CSS? CSS has padding. Inner card has display: flex.
-      // Wait, .context-indicator has padding but no display:flex in my CSS update.
-      // And HTML has style="display: none".
-      // So block is fine.
+      contextIndicator.style.display = "block";
 
       // Hide summarize selection if it's the full page context
       if (summarizeSelectionBtn)
         summarizeSelectionBtn.style.display = isPage ? "none" : "";
       if (addPageContextBtn) addPageContextBtn.style.display = "none";
 
-      // If we are setting a new context, we can forget about what was previously ignored
-      lastIgnoredSelection = "";
       updateInputPlaceholder();
     } else {
       selectedContextText = "";
       isPageContext = false;
-      // contextText.textContent = ""; // Removed
       contextTitle.textContent = "";
       contextDetails.textContent = "";
 
@@ -189,9 +200,25 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (selectedContextText) {
-        const prompt = `Summarize the following text:\n\n${selectedContextText}`;
+        const prompt = `Summarize the following text:
+
+${selectedContextText}`;
         appendUserMessage("Summarize selection");
-        streamResponse(prompt);
+        
+        // Context switch: Clear history for new distinct task
+        conversationHistory = [];
+        lastContextSignature = selectedContextText;
+
+        const messages = [{ role: "user", content: prompt }];
+        
+        streamResponse(messages, (aiResponse) => {
+            if (enableHistoryCheckbox.checked) {
+                conversationHistory.push(...messages);
+                conversationHistory.push({ role: "assistant", content: aiResponse });
+                saveConversationHistory();
+                updateInputPlaceholder();
+            }
+        });
       }
     });
   }
@@ -219,6 +246,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (addPageContextBtn) {
     addPageContextBtn.addEventListener("click", async () => {
+      // Ignore current selection to prevent immediate revert
+      try {
+        const tabs = await browser.tabs.query({
+            active: true,
+            currentWindow: true,
+        });
+        if (tabs && tabs.length > 0) {
+            const response = await browser.tabs.sendMessage(tabs[0].id, {
+                action: "get_selection",
+            });
+            if (response && response.selection) {
+                lastIgnoredSelection = response.selection.trim();
+            }
+        }
+      } catch(e) { /* ignore */ }
+
       const result = await getPageContent();
       if (result) {
         updateContextDisplay(result.content, true, {
@@ -247,11 +290,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentSelection =
           response && response.selection ? response.selection.trim() : "";
 
-        // If the selection has changed from what we explicitly ignored, reset the ignore state.
-        // This handles the case where user unselects or selects something else.
-        // We check if currentSelection is DIFFERENT from lastIgnoredSelection.
-        // However, if we just ignored "A", and selection is still "A", we don't want to reset.
-        // If selection becomes "B" or "", we reset.
         if (currentSelection !== lastIgnoredSelection) {
           lastIgnoredSelection = "";
         }
@@ -269,7 +307,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     } catch (error) {
-      // console.log('Error getting selection:', error);
       // content script might not be ready or page restricted
     }
   };
@@ -285,7 +322,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Also check when mouse enters the chat area, to catch selections made while sidebar was open
   document
     .querySelector(".app-container")
     .addEventListener("mouseenter", checkSelection);
@@ -320,7 +356,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (closeSettingsBtn) closeSettingsBtn.disabled = false;
       if (settingsToggle) {
         settingsToggle.disabled = false;
-        // Auto-close settings on success
         settingsPanel.classList.add("collapsed");
         settingsToggle.classList.add("collapsed");
       }
@@ -390,9 +425,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveChatHistory = () => {
     browser.storage.local.set({ chatHistory: chatHistory.innerHTML });
   };
+  
+  const saveConversationHistory = () => {
+    browser.storage.local.set({
+        conversationHistory: conversationHistory,
+        lastContextSignature: lastContextSignature
+    });
+  };
 
   const loadChatHistory = async () => {
-    const data = await browser.storage.local.get("chatHistory");
+    const data = await browser.storage.local.get(["chatHistory", "conversationHistory", "lastContextSignature"]);
     if (data.chatHistory) {
       chatHistory.innerHTML = data.chatHistory;
       chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -409,6 +451,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+    
+    if (data.conversationHistory) {
+        conversationHistory = data.conversationHistory;
+    }
+    if (data.lastContextSignature) {
+        lastContextSignature = data.lastContextSignature;
+    }
+    
     updateInputPlaceholder();
   };
 
@@ -468,7 +518,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateInputPlaceholder();
   };
 
-  const streamResponse = async (prompt) => {
+  const streamResponse = async (messages, onComplete) => {
     const baseUrl = baseUrlInput.value;
     sendPromptBtn.style.display = "none";
     stopGeneratingBtn.style.display = "grid";
@@ -490,7 +540,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify({
           model: modelSelect.value,
-          messages: [{ role: "user", content: prompt }],
+          messages: messages,
           stream: true,
         }),
         signal,
@@ -504,7 +554,6 @@ document.addEventListener("DOMContentLoaded", () => {
       messageContent.classList.add("message-content");
       messageContent.style.flexGrow = "1";
 
-      // Footer for button and stats
       const footer = document.createElement("div");
       footer.style.display = "flex";
       footer.style.alignItems = "center";
@@ -515,7 +564,6 @@ document.addEventListener("DOMContentLoaded", () => {
       copyIcon.src = "assets/icons/copy.svg";
       copyIcon.className = "icon-img";
       copyButton.appendChild(copyIcon);
-      // Remove margin from button since footer handles spacing or button has its own
       copyButton.style.marginLeft = "0";
 
       const statsSpan = document.createElement("span");
@@ -558,13 +606,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             try {
               const json = JSON.parse(data);
-
-              // Check for usage info if available
-              if (json.usage && json.usage.completion_tokens) {
-                // If usage is provided, use it (often in last chunk)
-                // tokenCount = json.usage.completion_tokens;
-              }
-
               if (
                 json.choices &&
                 json.choices[0].delta &&
@@ -572,7 +613,7 @@ document.addEventListener("DOMContentLoaded", () => {
               ) {
                 const content = json.choices[0].delta.content;
                 fullContent += content;
-                tokenCount++; // Approximation per chunk if usage not sent
+                tokenCount++;
                 messageContent.innerHTML = parseMarkdown(fullContent);
                 chatHistory.scrollTop = chatHistory.scrollHeight;
               }
@@ -583,21 +624,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Final Stats Calculation
       const endTime = Date.now();
       const duration = (endTime - startTime) / 1000;
       const tps = duration > 0 ? (tokenCount / duration).toFixed(1) : 0;
       const modelName = modelSelect.value.split("/").pop();
-      // Capitalize first letter for display
-      const displayModel =
-        modelName.charAt(0).toUpperCase() + modelName.slice(1);
+      const displayModel = modelName.charAt(0).toUpperCase() + modelName.slice(1);
 
       statsSpan.textContent = `${displayModel} | ${tokenCount} tokens | ${tps} t/s`;
 
-      // Cleanup on success
       saveChatHistory();
       sendPromptBtn.style.display = "grid";
       stopGeneratingBtn.style.display = "none";
+      
+      if (onComplete) {
+        onComplete(fullContent);
+      }
+      
     } catch (error) {
       if (loadingIndicator.parentNode) {
         chatHistory.removeChild(loadingIndicator);
@@ -619,34 +661,100 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const prompt = promptInput.value;
     if (prompt) {
-      appendUserMessage(prompt);
+      appendUserMessage(prompt); // Display just the question
+      
       let finalPrompt = prompt;
-
-      const maxTokens =
-        parseInt(maxTokensInput.value, 10) || DEFAULT_CONTEXT_TOKEN_LIMIT;
+      let contextToUse = selectedContextText;
+      const maxTokens = parseInt(maxTokensInput.value, 10) || DEFAULT_CONTEXT_TOKEN_LIMIT;
       const charLimit = maxTokens * 4;
 
-      if (selectedContextText) {
-        let contextToUse = selectedContextText;
-        // Calculate overhead: "Context:\n" + "\n\nQuestion:\n" + prompt
+      // Process Context (RAG/Truncation)
+      if (contextToUse) {
+        // ... (Same context processing logic as before) ...
         const overhead = 21 + prompt.length;
-
         if (contextToUse.length + overhead > charLimit) {
           const availableSpace = charLimit - overhead;
           if (availableSpace > 0) {
-            contextToUse =
-              contextToUse.substring(0, availableSpace) + "... (truncated)";
+            if (typeof RAGEngine !== 'undefined' && enableRagCheckbox.checked) {
+                const retrieved = RAGEngine.retrieve(selectedContextText, prompt, availableSpace);
+                if (retrieved && retrieved.length < selectedContextText.length) {
+                    contextToUse = retrieved;
+                    if (!hideContextToastsCheckbox.checked) showToast("Large context: Used relevant snippets.", "info");
+                } else {
+                    contextToUse = contextToUse.substring(0, availableSpace) + "... (truncated)";
+                    if (!hideContextToastsCheckbox.checked) showToast("Context truncated to fit token limit.", "warning");
+                }
+            } else {
+                contextToUse = contextToUse.substring(0, availableSpace) + "... (truncated)";
+                if (!hideContextToastsCheckbox.checked) showToast("Context truncated to fit token limit.", "warning");
+            }
           } else {
-            // If prompt is huge, we might not have space for context.
-            // Prioritize prompt, drop context or truncate heavily.
             contextToUse = contextToUse.substring(0, 100) + "... (truncated)";
           }
-          showToast("Context truncated to fit token limit.", "warning");
         }
-        finalPrompt = `Context:\n${contextToUse}\n\nQuestion:\n${prompt}`;
+        
+        // Construct the prompt string that INCLUDES context
+        finalPrompt = `Context:
+${contextToUse}
+
+Question:
+${prompt}`;
       }
 
-      streamResponse(finalPrompt);
+      // HISTORY LOGIC
+      let messagesToSend = [];
+      const enableHistory = enableHistoryCheckbox.checked;
+
+      // Check if context has changed
+      if (enableHistory) {
+          const currentContextSig = selectedContextText ? selectedContextText.substring(0, 100) + selectedContextText.length : "NO_CONTEXT";
+          const lastContextSig = lastContextSignature ? lastContextSignature.substring(0, 100) + lastContextSignature.length : "NO_CONTEXT";
+          
+          // If context changed, reset history
+          if (currentContextSig !== lastContextSig) {
+              conversationHistory = [];
+              lastContextSignature = selectedContextText;
+          }
+      } else {
+          // If history disabled, always reset (stateless)
+          conversationHistory = [];
+      }
+
+      if (enableHistory && conversationHistory.length > 0) {
+          // FOLLOW-UP QUESTION
+          // We assume the context was already sent in the history.
+          // BUT, if the previous message didn't have context (general chat) and now we have context, we must include it.
+          // Or if we had context and now we don't.
+          
+          // Simplification: If context is active now, we include it in THIS message if it wasn't the starter.
+          // Actually, if we cleared history on context change (above), then:
+          // 1. If history is empty: We are starting. Send `finalPrompt` (Context + Q).
+          // 2. If history is NOT empty: We are following up on SAME context. Send `prompt` (Q only).
+          
+          messagesToSend = [...conversationHistory, { role: "user", content: prompt }];
+      } else {
+          // FIRST QUESTION (or History Disabled)
+          // Send `finalPrompt` (Context + Q)
+          // We add `finalPrompt` to history so the context is remembered for next time.
+          messagesToSend = [{ role: "user", content: finalPrompt }];
+      }
+
+      streamResponse(messagesToSend, (aiResponse) => {
+          if (enableHistory) {
+              // Update History
+              if (conversationHistory.length === 0) {
+                  // First turn: save the context-laden prompt
+                  conversationHistory.push({ role: "user", content: finalPrompt });
+              } else {
+                  // Follow up: save the simple prompt
+                  conversationHistory.push({ role: "user", content: prompt });
+              }
+              conversationHistory.push({ role: "assistant", content: aiResponse });
+              saveConversationHistory();
+              updateInputPlaceholder();
+          }
+      });
+      
       promptInput.value = "";
     }
   });
@@ -657,24 +765,43 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  const maxTokensInput = document.getElementById("max-tokens");
-
-  // ... existing code ...
-
   const saveMaxTokens = () => {
     browser.storage.local.set({ maxTokens: maxTokensInput.value });
   };
+  
+  const saveEnableHistory = () => {
+      browser.storage.local.set({ enableHistory: enableHistoryCheckbox.checked });
+      updateInputPlaceholder();
+  };
 
-  const loadMaxTokens = async () => {
-    const data = await browser.storage.local.get("maxTokens");
+  const saveEnableRag = () => {
+      browser.storage.local.set({ enableRag: enableRagCheckbox.checked });
+  };
+
+  const saveHideContextToasts = () => {
+      browser.storage.local.set({ hideContextToasts: hideContextToastsCheckbox.checked });
+  };
+
+  const loadSettings = async () => {
+    const data = await browser.storage.local.get(["maxTokens", "enableHistory", "enableRag", "hideContextToasts"]);
     if (data.maxTokens) {
       maxTokensInput.value = data.maxTokens;
+    }
+    if (data.enableHistory !== undefined) {
+        enableHistoryCheckbox.checked = data.enableHistory;
+    }
+    if (data.enableRag !== undefined) {
+        enableRagCheckbox.checked = data.enableRag;
+    }
+    if (data.hideContextToasts !== undefined) {
+        hideContextToastsCheckbox.checked = data.hideContextToasts;
     }
   };
 
   maxTokensInput.addEventListener("change", saveMaxTokens);
-
-  // ... existing code ...
+  enableHistoryCheckbox.addEventListener("change", saveEnableHistory);
+  enableRagCheckbox.addEventListener("change", saveEnableRag);
+  hideContextToastsCheckbox.addEventListener("change", saveHideContextToasts);
 
   summarizePageBtn.addEventListener("click", async () => {
     if (!modelSelect.value) {
@@ -690,8 +817,31 @@ document.addEventListener("DOMContentLoaded", () => {
       let finalContent = content;
 
       if (finalContent.length > charLimit) {
-        finalContent = finalContent.substring(0, charLimit);
-        showToast(`Page content truncated to fit token limit.`, "warning");
+        if (enableRagCheckbox.checked) {
+            // Smart Selection Strategy
+            const introLimit = Math.floor(charLimit * 0.2);
+            const outroLimit = Math.floor(charLimit * 0.2);
+            const middleLimit = charLimit - introLimit - outroLimit;
+            const intro = finalContent.substring(0, introLimit);
+            const outro = finalContent.substring(finalContent.length - outroLimit);
+            const middleText = finalContent.substring(introLimit, finalContent.length - outroLimit);
+            let middle = "";
+            if (middleText.length > 0) {
+                const step = Math.floor(middleText.length / 3);
+                const chunkLen = Math.floor(middleLimit / 3);
+                for (let i = 0; i < 3; i++) {
+                    const start = i * step;
+                    const slice = middleText.substring(start, start + chunkLen);
+                    middle += "\n\n...[skipped]...\n\n" + slice;
+                }
+            }
+            finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
+            if (!hideContextToastsCheckbox.checked) showToast(`Page content summarized via smart selection to fit limit.`, "info");
+        } else {
+            // Simple Truncation
+            finalContent = finalContent.substring(0, charLimit) + "... (truncated)";
+            if (!hideContextToastsCheckbox.checked) showToast(`Page content truncated to fit limit.`, "warning");
+        }
       }
 
       const prompt = `Summarize the following web page content: ${finalContent}`;
@@ -700,13 +850,36 @@ document.addEventListener("DOMContentLoaded", () => {
         url: tab.url,
         favIconUrl: tab.favIconUrl,
       });
-      streamResponse(prompt);
-    }
+      
+      // RESET HISTORY for new summary
+      conversationHistory = [];
+      lastContextSignature = content; // Implicit context
+      
+      const messages = [{ role: "user", content: prompt }];
+      
+            streamResponse(messages, (aiResponse) => {
+                if (enableHistoryCheckbox.checked) {
+                    conversationHistory.push(...messages);
+                    conversationHistory.push({ role: "assistant", content: aiResponse });
+                    saveConversationHistory();
+                    updateInputPlaceholder();
+                    
+                    // Implicitly set context so user can ask follow ups
+                    updateContextDisplay(content, true, {
+                        title: tab.title,
+                        url: tab.url,
+                        favIconUrl: tab.favIconUrl
+                    });
+                }
+            });    }
   });
 
   clearChatBtn.addEventListener("click", () => {
     chatHistory.innerHTML = "";
+    conversationHistory = [];
+    lastContextSignature = "";
     saveChatHistory();
+    saveConversationHistory();
     updateInputPlaceholder();
   });
 
@@ -716,10 +889,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const init = async () => {
     await loadBaseUrl();
-    await loadMaxTokens();
+    await loadSettings();
 
-    // Check if configuration exists to auto-collapse
-    // We check baseUrlInput.value because it might be the default value which is valid
     const data = await browser.storage.local.get(["baseUrl", "selectedModel"]);
     if (data.baseUrl && data.selectedModel) {
       settingsPanel.classList.add("collapsed");
