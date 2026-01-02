@@ -126,6 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Chat History State
   let conversationHistory = [];
+  let fullMessageLog = []; // Persistent history of all messages
   let lastContextSignature = "";
 
   const updateInputPlaceholder = () => {
@@ -479,8 +480,105 @@ ${selectedContextText}`;
     );
   }
 
-  const saveChatHistory = () => {
-    browser.storage.local.set({ chatHistory: chatHistory.innerHTML });
+  const renderMessage = (message) => {
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("message", message.role === "user" ? "user" : "ai");
+
+    const messageContent = document.createElement("div");
+    messageContent.classList.add("message-content");
+    messageContent.style.flexGrow = "1";
+
+    if (message.role === "user") {
+        messageContent.textContent = message.content;
+        
+        if (message.metadata) {
+            const card = document.createElement("div");
+            card.className = "page-card";
+
+            if (message.metadata.favIconUrl) {
+                const icon = document.createElement("img");
+                icon.className = "page-card-icon";
+                icon.src = message.metadata.favIconUrl;
+                card.appendChild(icon);
+            } else {
+                const icon = document.createElement("div");
+                icon.className = "page-card-icon";
+                icon.textContent = "📄";
+                icon.style.display = "flex";
+                icon.style.alignItems = "center";
+                icon.style.justifyContent = "center";
+                card.appendChild(icon);
+            }
+
+            const info = document.createElement("div");
+            info.className = "page-card-info";
+
+            const title = document.createElement("div");
+            title.className = "page-card-title";
+            title.textContent = message.metadata.title || "Web Page";
+
+            const url = document.createElement("div");
+            url.className = "page-card-url";
+            try {
+                const urlObj = new URL(message.metadata.url);
+                url.textContent = urlObj.hostname;
+            } catch (e) {
+                url.textContent = message.metadata.url;
+            }
+
+            info.appendChild(title);
+            info.appendChild(url);
+            card.appendChild(info);
+            messageContent.appendChild(card);
+        }
+    } else {
+        // AI Message
+        messageContent.innerHTML = parseMarkdown(message.content);
+    }
+
+    messageElement.appendChild(messageContent);
+
+    if (message.role === "assistant") {
+        const footer = document.createElement("div");
+        footer.style.display = "flex";
+        footer.style.alignItems = "center";
+        footer.style.marginTop = "5px";
+
+        const copyButton = document.createElement("button");
+        const copyIcon = document.createElement("img");
+        copyIcon.src = "assets/icons/copy.svg";
+        copyIcon.className = "icon-img";
+        copyButton.appendChild(copyIcon);
+        copyButton.style.marginLeft = "0";
+        
+        copyButton.addEventListener("click", () => {
+            navigator.clipboard.writeText(message.content);
+        });
+
+        footer.appendChild(copyButton);
+        
+        // Restore stats if available, else just model name if we saved it?
+        // For now, minimal footer
+        if (message.metadata && message.metadata.model) {
+             const statsSpan = document.createElement("span");
+             statsSpan.style.fontSize = "11px";
+             statsSpan.style.color = "var(--text-secondary)";
+             statsSpan.style.marginLeft = "10px";
+             // Clean model name
+             const modelName = message.metadata.model.split("/").pop();
+             statsSpan.textContent = modelName.charAt(0).toUpperCase() + modelName.slice(1);
+             footer.appendChild(statsSpan);
+        }
+
+        messageElement.appendChild(footer);
+    }
+
+    chatHistory.appendChild(messageElement);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+  };
+
+  const saveMessageLog = () => {
+    browser.storage.local.set({ messageLog: fullMessageLog });
   };
   
   const saveConversationHistory = () => {
@@ -491,22 +589,18 @@ ${selectedContextText}`;
   };
 
   const loadChatHistory = async () => {
-    const data = await browser.storage.local.get(["chatHistory", "conversationHistory", "lastContextSignature"]);
-    if (data.chatHistory) {
-      chatHistory.innerHTML = data.chatHistory;
-      chatHistory.scrollTop = chatHistory.scrollHeight;
+    const data = await browser.storage.local.get(["messageLog", "chatHistory", "conversationHistory", "lastContextSignature"]);
+    
+    // Migration: Security clear of old HTML history
+    if (data.chatHistory && !data.messageLog) {
+        browser.storage.local.remove("chatHistory");
+        chatHistory.innerHTML = "";
+        // We start fresh
+    }
 
-      // Re-add event listeners to copy buttons
-      const messages = chatHistory.querySelectorAll(".message");
-      messages.forEach((message) => {
-        const copyButton = message.querySelector("button");
-        const messageContent = message.querySelector("div");
-        if (copyButton && messageContent) {
-          copyButton.addEventListener("click", () => {
-            navigator.clipboard.writeText(messageContent.textContent);
-          });
-        }
-      });
+    if (data.messageLog) {
+        fullMessageLog = data.messageLog;
+        fullMessageLog.forEach(msg => renderMessage(msg));
     }
     
     if (data.conversationHistory) {
@@ -520,58 +614,10 @@ ${selectedContextText}`;
   };
 
   const appendUserMessage = (text, metadata = null) => {
-    const messageElement = document.createElement("div");
-    messageElement.classList.add("message", "user");
-
-    const messageContent = document.createElement("div");
-    messageContent.classList.add("message-content");
-    messageContent.textContent = text;
-
-    if (metadata) {
-      const card = document.createElement("div");
-      card.className = "page-card";
-
-      if (metadata.favIconUrl) {
-        const icon = document.createElement("img");
-        icon.className = "page-card-icon";
-        icon.src = metadata.favIconUrl;
-        card.appendChild(icon);
-      } else {
-        const icon = document.createElement("div");
-        icon.className = "page-card-icon";
-        icon.textContent = "📄";
-        icon.style.display = "flex";
-        icon.style.alignItems = "center";
-        icon.style.justifyContent = "center";
-        card.appendChild(icon);
-      }
-
-      const info = document.createElement("div");
-      info.className = "page-card-info";
-
-      const title = document.createElement("div");
-      title.className = "page-card-title";
-      title.textContent = metadata.title || "Web Page";
-
-      const url = document.createElement("div");
-      url.className = "page-card-url";
-      try {
-        const urlObj = new URL(metadata.url);
-        url.textContent = urlObj.hostname;
-      } catch (e) {
-        url.textContent = metadata.url;
-      }
-
-      info.appendChild(title);
-      info.appendChild(url);
-      card.appendChild(info);
-      messageContent.appendChild(card);
-    }
-
-    messageElement.appendChild(messageContent);
-    chatHistory.appendChild(messageElement);
-    chatHistory.scrollTop = chatHistory.scrollHeight;
-    saveChatHistory();
+    const message = { role: "user", content: text, metadata };
+    fullMessageLog.push(message);
+    renderMessage(message);
+    saveMessageLog();
     updateInputPlaceholder();
   };
 
@@ -695,7 +741,14 @@ ${selectedContextText}`;
 
       statsSpan.textContent = `${displayModel} | ${tokenCount} tokens | ${tps} t/s`;
 
-      saveChatHistory();
+      // Save complete message to log
+      fullMessageLog.push({
+          role: "assistant",
+          content: fullContent,
+          metadata: { model: modelSelect.value }
+      });
+      saveMessageLog();
+
       sendPromptBtn.style.display = "grid";
       stopGeneratingBtn.style.display = "none";
       
@@ -940,8 +993,9 @@ ${prompt}`;
   clearChatBtn.addEventListener("click", () => {
     chatHistory.innerHTML = "";
     conversationHistory = [];
+    fullMessageLog = [];
     lastContextSignature = "";
-    saveChatHistory();
+    saveMessageLog();
     saveConversationHistory();
     updateInputPlaceholder();
   });
