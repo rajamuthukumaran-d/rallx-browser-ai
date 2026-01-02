@@ -359,6 +359,14 @@ ${selectedContextText}`;
     
     try {
       const response = await fetch(`${baseUrl}/models`, { headers });
+      
+      if (!response.ok) {
+          if (response.status === 403) {
+              throw new Error("403 Forbidden. Check API Key or CORS settings (e.g. OLLAMA_ORIGINS=\"*\").");
+          }
+          throw new Error(`HTTP Error: ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (!data.data || data.data.length === 0) {
@@ -391,7 +399,9 @@ ${selectedContextText}`;
       modelSelect.innerHTML =
         "<option disabled selected>No Connection</option>";
       if (closeSettingsBtn) closeSettingsBtn.disabled = true;
-      showToast("Could not connect to LLM Server. Check URL.", "warning");
+      
+      const msg = error.message.includes("403") ? error.message : "Could not connect to LLM Server. Check URL.";
+      showToast(msg, "warning");
       updateButtonStates();
     }
   };
@@ -655,6 +665,13 @@ ${selectedContextText}`;
         signal,
       });
 
+      if (!response.ok) {
+          if (response.status === 403) {
+              throw new Error("403 Forbidden. Check API Key or CORS settings (e.g. OLLAMA_ORIGINS=\"*\").");
+          }
+          throw new Error(`HTTP Error: ${response.status}`);
+      }
+
       chatHistory.removeChild(loadingIndicator);
 
       const messageElement = document.createElement("div");
@@ -764,6 +781,7 @@ ${selectedContextText}`;
         console.log("Fetch aborted");
       } else {
         console.error("Error sending prompt:", error);
+        showToast(error.message, "warning");
       }
       sendPromptBtn.style.display = "grid";
       stopGeneratingBtn.style.display = "none";
