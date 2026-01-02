@@ -177,7 +177,6 @@ document.addEventListener("DOMContentLoaded", () => {
         summarizeSelectionBtn.style.display = isPage ? "none" : "";
       if (addPageContextBtn) addPageContextBtn.style.display = "none";
 
-      lastIgnoredSelection = "";
       updateInputPlaceholder();
     } else {
       selectedContextText = "";
@@ -245,6 +244,22 @@ ${selectedContextText}`;
 
   if (addPageContextBtn) {
     addPageContextBtn.addEventListener("click", async () => {
+      // Ignore current selection to prevent immediate revert
+      try {
+        const tabs = await browser.tabs.query({
+            active: true,
+            currentWindow: true,
+        });
+        if (tabs && tabs.length > 0) {
+            const response = await browser.tabs.sendMessage(tabs[0].id, {
+                action: "get_selection",
+            });
+            if (response && response.selection) {
+                lastIgnoredSelection = response.selection.trim();
+            }
+        }
+      } catch(e) { /* ignore */ }
+
       const result = await getPageContent();
       if (result) {
         updateContextDisplay(result.content, true, {
