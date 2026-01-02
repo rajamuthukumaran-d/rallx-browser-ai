@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const enableHistoryCheckbox = document.getElementById("enable-history");
   const enableRagCheckbox = document.getElementById("enable-rag");
+  const hideContextToastsCheckbox = document.getElementById("hide-context-toasts");
   const maxTokensInput = document.getElementById("max-tokens");
 
   if (settingsToggle) {
@@ -678,14 +679,14 @@ ${selectedContextText}`;
                 const retrieved = RAGEngine.retrieve(selectedContextText, prompt, availableSpace);
                 if (retrieved && retrieved.length < selectedContextText.length) {
                     contextToUse = retrieved;
-                    showToast("Large context: Used relevant snippets.", "info");
+                    if (!hideContextToastsCheckbox.checked) showToast("Large context: Used relevant snippets.", "info");
                 } else {
                     contextToUse = contextToUse.substring(0, availableSpace) + "... (truncated)";
-                    showToast("Context truncated to fit token limit.", "warning");
+                    if (!hideContextToastsCheckbox.checked) showToast("Context truncated to fit token limit.", "warning");
                 }
             } else {
                 contextToUse = contextToUse.substring(0, availableSpace) + "... (truncated)";
-                showToast("Context truncated to fit token limit.", "warning");
+                if (!hideContextToastsCheckbox.checked) showToast("Context truncated to fit token limit.", "warning");
             }
           } else {
             contextToUse = contextToUse.substring(0, 100) + "... (truncated)";
@@ -777,8 +778,12 @@ ${prompt}`;
       browser.storage.local.set({ enableRag: enableRagCheckbox.checked });
   };
 
+  const saveHideContextToasts = () => {
+      browser.storage.local.set({ hideContextToasts: hideContextToastsCheckbox.checked });
+  };
+
   const loadSettings = async () => {
-    const data = await browser.storage.local.get(["maxTokens", "enableHistory", "enableRag"]);
+    const data = await browser.storage.local.get(["maxTokens", "enableHistory", "enableRag", "hideContextToasts"]);
     if (data.maxTokens) {
       maxTokensInput.value = data.maxTokens;
     }
@@ -788,11 +793,15 @@ ${prompt}`;
     if (data.enableRag !== undefined) {
         enableRagCheckbox.checked = data.enableRag;
     }
+    if (data.hideContextToasts !== undefined) {
+        hideContextToastsCheckbox.checked = data.hideContextToasts;
+    }
   };
 
   maxTokensInput.addEventListener("change", saveMaxTokens);
   enableHistoryCheckbox.addEventListener("change", saveEnableHistory);
   enableRagCheckbox.addEventListener("change", saveEnableRag);
+  hideContextToastsCheckbox.addEventListener("change", saveHideContextToasts);
 
   summarizePageBtn.addEventListener("click", async () => {
     if (!modelSelect.value) {
@@ -827,11 +836,11 @@ ${prompt}`;
                 }
             }
             finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
-            showToast(`Page content summarized via smart selection to fit limit.`, "info");
+            if (!hideContextToastsCheckbox.checked) showToast(`Page content summarized via smart selection to fit limit.`, "info");
         } else {
             // Simple Truncation
             finalContent = finalContent.substring(0, charLimit) + "... (truncated)";
-            showToast(`Page content truncated to fit limit.`, "warning");
+            if (!hideContextToastsCheckbox.checked) showToast(`Page content truncated to fit limit.`, "warning");
         }
       }
 
