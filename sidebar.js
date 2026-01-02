@@ -77,6 +77,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 3000);
   };
 
+  const updateButtonStates = () => {
+    const hasModel = modelSelect.value && modelSelect.value !== "No Connection";
+    const disabled = !hasModel;
+
+    sendPromptBtn.disabled = disabled;
+    if (summarizePageBtn) summarizePageBtn.disabled = disabled;
+    if (summarizeSelectionBtn) summarizeSelectionBtn.disabled = disabled;
+    if (addPageContextBtn) addPageContextBtn.disabled = disabled;
+
+    if (disabled) {
+      sendPromptBtn.classList.add("disabled");
+      if (summarizePageBtn) summarizePageBtn.classList.add("disabled");
+      if (summarizeSelectionBtn) summarizeSelectionBtn.classList.add("disabled");
+      if (addPageContextBtn) addPageContextBtn.classList.add("disabled");
+    } else {
+      sendPromptBtn.classList.remove("disabled");
+      if (summarizePageBtn) summarizePageBtn.classList.remove("disabled");
+      if (summarizeSelectionBtn) summarizeSelectionBtn.classList.remove("disabled");
+      if (addPageContextBtn) addPageContextBtn.classList.remove("disabled");
+    }
+  };
+
   const DEFAULT_CONTEXT_TOKEN_LIMIT = 3098;
 
   let selectedContextText = "";
@@ -162,6 +184,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (summarizeSelectionBtn) {
     summarizeSelectionBtn.addEventListener("click", () => {
+      if (!modelSelect.value) {
+        showToast("Please select a model first", "warning");
+        return;
+      }
       if (selectedContextText) {
         const prompt = `Summarize the following text:\n\n${selectedContextText}`;
         appendUserMessage("Summarize selection");
@@ -253,7 +279,9 @@ document.addEventListener("DOMContentLoaded", () => {
   promptInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendPromptBtn.click();
+      if (!sendPromptBtn.disabled) {
+        sendPromptBtn.click();
+      }
     }
   });
 
@@ -296,6 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
         settingsPanel.classList.add("collapsed");
         settingsToggle.classList.add("collapsed");
       }
+      updateButtonStates();
     } catch (error) {
       console.error("Error fetching models:", error);
       settingsPanel.classList.remove("collapsed");
@@ -307,6 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "<option disabled selected>No Connection</option>";
       if (closeSettingsBtn) closeSettingsBtn.disabled = true;
       showToast("Could not connect to LLM Server. Check URL.", "warning");
+      updateButtonStates();
     }
   };
 
@@ -334,6 +364,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   modelSelect.addEventListener("change", () => {
     saveSelectedModel();
+    updateButtonStates();
   });
 
   const saveBaseUrlBtn = document.getElementById("save-base-url");
@@ -582,6 +613,10 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   sendPromptBtn.addEventListener("click", async () => {
+    if (!modelSelect.value) {
+      showToast("Please select a model first", "warning");
+      return;
+    }
     const prompt = promptInput.value;
     if (prompt) {
       appendUserMessage(prompt);
@@ -642,6 +677,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // ... existing code ...
 
   summarizePageBtn.addEventListener("click", async () => {
+    if (!modelSelect.value) {
+      showToast("Please select a model first", "warning");
+      return;
+    }
     const result = await getPageContent();
     if (result) {
       const { content, tab } = result;

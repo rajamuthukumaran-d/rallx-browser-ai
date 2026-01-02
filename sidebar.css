@@ -621,6 +621,21 @@ button:hover {
   background-color: #e0e0e0;
 }
 
+.send-btn:disabled,
+.chip:disabled,
+.chip.disabled,
+.send-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--surface-color);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.send-btn:disabled .icon-img {
+  filter: brightness(50);
+  opacity: 0.5;
+}
 .stop-btn {
   background-color: var(--surface-color);
   color: white;
