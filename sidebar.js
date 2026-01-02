@@ -29,6 +29,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const hideContextToastsCheckbox = document.getElementById("hide-context-toasts");
   const maxTokensInput = document.getElementById("max-tokens");
 
+  let cryptoKey = null;
+
+  const initializeEncryption = async () => {
+      const data = await browser.storage.local.get("masterKeyJWK");
+      if (data.masterKeyJWK) {
+          cryptoKey = await EncryptionUtils.importKey(data.masterKeyJWK);
+      } else {
+          cryptoKey = await EncryptionUtils.generateKey();
+          const jwk = await EncryptionUtils.exportKey(cryptoKey);
+          await browser.storage.local.set({ masterKeyJWK: jwk });
+      }
+  };
+
   if (settingsToggle) {
     settingsToggle.addEventListener("click", () => {
       // Prevent closing if close button is disabled (means connection error)
@@ -392,7 +405,11 @@ ${selectedContextText}`;
       baseUrlInput.value = data.baseUrl;
     }
     if (data.apiKey) {
-      apiKeyInput.value = data.apiKey;
+      if (!cryptoKey) await initializeEncryption();
+      const decrypted = await EncryptionUtils.decrypt(data.apiKey, cryptoKey);
+      if (decrypted !== null) {
+          apiKeyInput.value = decrypted;
+      }
     }
   };
 
@@ -421,8 +438,10 @@ ${selectedContextText}`;
   const saveApiKeyBtn = document.getElementById("save-api-key");
   const toggleApiKeyVisibilityBtn = document.getElementById("toggle-api-key-visibility");
   
-  const saveApiKey = () => {
-    browser.storage.local.set({ apiKey: apiKeyInput.value });
+  const saveApiKey = async () => {
+    if (!cryptoKey) await initializeEncryption();
+    const encrypted = await EncryptionUtils.encrypt(apiKeyInput.value, cryptoKey);
+    browser.storage.local.set({ apiKey: encrypted });
   };
   
   if (saveApiKeyBtn) {
@@ -932,6 +951,7 @@ ${prompt}`;
   });
 
   const init = async () => {
+    await initializeEncryption();
     await loadBaseUrl();
     await loadSettings();
 
