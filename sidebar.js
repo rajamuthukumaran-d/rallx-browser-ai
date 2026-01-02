@@ -113,7 +113,15 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastContextSignature = "";
 
   const updateInputPlaceholder = () => {
-    if (selectedContextText) {
+    const enableHistory = enableHistoryCheckbox.checked;
+    const currentContextSig = selectedContextText ? selectedContextText.substring(0, 100) + selectedContextText.length : "NO_CONTEXT";
+    const lastSig = lastContextSignature ? lastContextSignature.substring(0, 100) + lastContextSignature.length : "NO_CONTEXT";
+    
+    const isSameContext = currentContextSig === lastSig;
+
+    if (enableHistory && conversationHistory.length > 0 && isSameContext) {
+      promptInput.placeholder = "Ask a follow-up...";
+    } else if (selectedContextText) {
       promptInput.placeholder = isPageContext
         ? "Ask about this page..."
         : "Ask about selection...";
@@ -207,6 +215,7 @@ ${selectedContextText}`;
                 conversationHistory.push(...messages);
                 conversationHistory.push({ role: "assistant", content: aiResponse });
                 saveConversationHistory();
+                updateInputPlaceholder();
             }
         });
       }
@@ -725,6 +734,7 @@ ${prompt}`;
               }
               conversationHistory.push({ role: "assistant", content: aiResponse });
               saveConversationHistory();
+              updateInputPlaceholder();
           }
       });
       
@@ -744,6 +754,7 @@ ${prompt}`;
   
   const saveEnableHistory = () => {
       browser.storage.local.set({ enableHistory: enableHistoryCheckbox.checked });
+      updateInputPlaceholder();
   };
 
   const loadSettings = async () => {
@@ -806,36 +817,21 @@ ${prompt}`;
       
       const messages = [{ role: "user", content: prompt }];
       
-      streamResponse(messages, (aiResponse) => {
-          if (enableHistoryCheckbox.checked) {
-              conversationHistory.push(...messages);
-              conversationHistory.push({ role: "assistant", content: aiResponse });
-              saveConversationHistory();
-              
-              // Implicitly set context so user can ask follow ups
-              // We don't display the full text in the UI input box to save space,
-              // but we should probably tell the system we are "talking about this page"
-              // However, getPageContent doesn't persist to `selectedContextText`.
-              // To enable seamless follow-up, we should probably set selectedContextText 
-              // BUT if we do, the next message will re-send it.
-              // Our logic handles "Already in history" via conversationHistory[0].
-              // So if we just continue, it works!
-              
-              // BUT: next `sendPrompt` checks `selectedContextText`.
-              // If `selectedContextText` is empty, it thinks context changed?
-              // `lastContextSignature` is set to `content`.
-              // `selectedContextText` is "".
-              // They differ -> History cleared.
-              // So we MUST set `selectedContextText` if we want to follow up.
-              
-              updateContextDisplay(content, true, {
-                  title: tab.title,
-                  url: tab.url,
-                  favIconUrl: tab.favIconUrl
-              });
-          }
-      });
-    }
+            streamResponse(messages, (aiResponse) => {
+                if (enableHistoryCheckbox.checked) {
+                    conversationHistory.push(...messages);
+                    conversationHistory.push({ role: "assistant", content: aiResponse });
+                    saveConversationHistory();
+                    updateInputPlaceholder();
+                    
+                    // Implicitly set context so user can ask follow ups
+                    updateContextDisplay(content, true, {
+                        title: tab.title,
+                        url: tab.url,
+                        favIconUrl: tab.favIconUrl
+                    });
+                }
+            });    }
   });
 
   clearChatBtn.addEventListener("click", () => {
