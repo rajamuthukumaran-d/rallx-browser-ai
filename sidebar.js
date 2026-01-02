@@ -23,6 +23,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const settingsPanel = document.getElementById("settings-panel");
   const closeSettingsBtn = document.getElementById("close-settings");
 
+  const enableHistoryCheckbox = document.getElementById("enable-history");
+  const maxTokensInput = document.getElementById("max-tokens");
+
   if (settingsToggle) {
     settingsToggle.addEventListener("click", () => {
       // Prevent closing if close button is disabled (means connection error)
@@ -104,6 +107,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedContextText = "";
   let lastIgnoredSelection = "";
   let isPageContext = false;
+  
+  // Chat History State
+  let conversationHistory = [];
+  let lastContextSignature = "";
 
   const updateInputPlaceholder = () => {
     if (selectedContextText) {
@@ -155,23 +162,18 @@ document.addEventListener("DOMContentLoaded", () => {
         contextIconPlaceholder.textContent = isPage ? "📄" : "📝";
       }
 
-      contextIndicator.style.display = "block"; // or flex, handled by CSS? CSS has padding. Inner card has display: flex.
-      // Wait, .context-indicator has padding but no display:flex in my CSS update.
-      // And HTML has style="display: none".
-      // So block is fine.
+      contextIndicator.style.display = "block";
 
       // Hide summarize selection if it's the full page context
       if (summarizeSelectionBtn)
         summarizeSelectionBtn.style.display = isPage ? "none" : "";
       if (addPageContextBtn) addPageContextBtn.style.display = "none";
 
-      // If we are setting a new context, we can forget about what was previously ignored
       lastIgnoredSelection = "";
       updateInputPlaceholder();
     } else {
       selectedContextText = "";
       isPageContext = false;
-      // contextText.textContent = ""; // Removed
       contextTitle.textContent = "";
       contextDetails.textContent = "";
 
@@ -189,9 +191,24 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (selectedContextText) {
-        const prompt = `Summarize the following text:\n\n${selectedContextText}`;
+        const prompt = `Summarize the following text:
+
+${selectedContextText}`;
         appendUserMessage("Summarize selection");
-        streamResponse(prompt);
+        
+        // Context switch: Clear history for new distinct task
+        conversationHistory = [];
+        lastContextSignature = selectedContextText;
+
+        const messages = [{ role: "user", content: prompt }];
+        
+        streamResponse(messages, (aiResponse) => {
+            if (enableHistoryCheckbox.checked) {
+                conversationHistory.push(...messages);
+                conversationHistory.push({ role: "assistant", content: aiResponse });
+                saveConversationHistory();
+            }
+        });
       }
     });
   }
@@ -247,11 +264,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentSelection =
           response && response.selection ? response.selection.trim() : "";
 
-        // If the selection has changed from what we explicitly ignored, reset the ignore state.
-        // This handles the case where user unselects or selects something else.
-        // We check if currentSelection is DIFFERENT from lastIgnoredSelection.
-        // However, if we just ignored "A", and selection is still "A", we don't want to reset.
-        // If selection becomes "B" or "", we reset.
         if (currentSelection !== lastIgnoredSelection) {
           lastIgnoredSelection = "";
         }
@@ -269,7 +281,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     } catch (error) {
-      // console.log('Error getting selection:', error);
       // content script might not be ready or page restricted
     }
   };
@@ -285,7 +296,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Also check when mouse enters the chat area, to catch selections made while sidebar was open
   document
     .querySelector(".app-container")
     .addEventListener("mouseenter", checkSelection);
@@ -320,7 +330,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (closeSettingsBtn) closeSettingsBtn.disabled = false;
       if (settingsToggle) {
         settingsToggle.disabled = false;
-        // Auto-close settings on success
         settingsPanel.classList.add("collapsed");
         settingsToggle.classList.add("collapsed");
       }
@@ -390,9 +399,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveChatHistory = () => {
     browser.storage.local.set({ chatHistory: chatHistory.innerHTML });
   };
+  
+  const saveConversationHistory = () => {
+    browser.storage.local.set({
+        conversationHistory: conversationHistory,
+        lastContextSignature: lastContextSignature
+    });
+  };
 
   const loadChatHistory = async () => {
-    const data = await browser.storage.local.get("chatHistory");
+    const data = await browser.storage.local.get(["chatHistory", "conversationHistory", "lastContextSignature"]);
     if (data.chatHistory) {
       chatHistory.innerHTML = data.chatHistory;
       chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -409,6 +425,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+    
+    if (data.conversationHistory) {
+        conversationHistory = data.conversationHistory;
+    }
+    if (data.lastContextSignature) {
+        lastContextSignature = data.lastContextSignature;
+    }
+    
     updateInputPlaceholder();
   };
 
@@ -468,7 +492,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateInputPlaceholder();
   };
 
-  const streamResponse = async (prompt) => {
+  const streamResponse = async (messages, onComplete) => {
     const baseUrl = baseUrlInput.value;
     sendPromptBtn.style.display = "none";
     stopGeneratingBtn.style.display = "grid";
@@ -490,7 +514,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify({
           model: modelSelect.value,
-          messages: [{ role: "user", content: prompt }],
+          messages: messages,
           stream: true,
         }),
         signal,
@@ -504,7 +528,6 @@ document.addEventListener("DOMContentLoaded", () => {
       messageContent.classList.add("message-content");
       messageContent.style.flexGrow = "1";
 
-      // Footer for button and stats
       const footer = document.createElement("div");
       footer.style.display = "flex";
       footer.style.alignItems = "center";
@@ -515,7 +538,6 @@ document.addEventListener("DOMContentLoaded", () => {
       copyIcon.src = "assets/icons/copy.svg";
       copyIcon.className = "icon-img";
       copyButton.appendChild(copyIcon);
-      // Remove margin from button since footer handles spacing or button has its own
       copyButton.style.marginLeft = "0";
 
       const statsSpan = document.createElement("span");
@@ -558,13 +580,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             try {
               const json = JSON.parse(data);
-
-              // Check for usage info if available
-              if (json.usage && json.usage.completion_tokens) {
-                // If usage is provided, use it (often in last chunk)
-                // tokenCount = json.usage.completion_tokens;
-              }
-
               if (
                 json.choices &&
                 json.choices[0].delta &&
@@ -572,7 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
               ) {
                 const content = json.choices[0].delta.content;
                 fullContent += content;
-                tokenCount++; // Approximation per chunk if usage not sent
+                tokenCount++;
                 messageContent.innerHTML = parseMarkdown(fullContent);
                 chatHistory.scrollTop = chatHistory.scrollHeight;
               }
@@ -583,21 +598,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Final Stats Calculation
       const endTime = Date.now();
       const duration = (endTime - startTime) / 1000;
       const tps = duration > 0 ? (tokenCount / duration).toFixed(1) : 0;
       const modelName = modelSelect.value.split("/").pop();
-      // Capitalize first letter for display
-      const displayModel =
-        modelName.charAt(0).toUpperCase() + modelName.slice(1);
+      const displayModel = modelName.charAt(0).toUpperCase() + modelName.slice(1);
 
       statsSpan.textContent = `${displayModel} | ${tokenCount} tokens | ${tps} t/s`;
 
-      // Cleanup on success
       saveChatHistory();
       sendPromptBtn.style.display = "grid";
       stopGeneratingBtn.style.display = "none";
+      
+      if (onComplete) {
+        onComplete(fullContent);
+      }
+      
     } catch (error) {
       if (loadingIndicator.parentNode) {
         chatHistory.removeChild(loadingIndicator);
@@ -619,31 +635,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const prompt = promptInput.value;
     if (prompt) {
-      appendUserMessage(prompt);
+      appendUserMessage(prompt); // Display just the question
+      
       let finalPrompt = prompt;
-
-      const maxTokens =
-        parseInt(maxTokensInput.value, 10) || DEFAULT_CONTEXT_TOKEN_LIMIT;
+      let contextToUse = selectedContextText;
+      const maxTokens = parseInt(maxTokensInput.value, 10) || DEFAULT_CONTEXT_TOKEN_LIMIT;
       const charLimit = maxTokens * 4;
 
-      if (selectedContextText) {
-        let contextToUse = selectedContextText;
-        // Calculate overhead: "Context:\n" + "\n\nQuestion:\n" + prompt
+      // Process Context (RAG/Truncation)
+      if (contextToUse) {
+        // ... (Same context processing logic as before) ...
         const overhead = 21 + prompt.length;
-
         if (contextToUse.length + overhead > charLimit) {
           const availableSpace = charLimit - overhead;
-          
           if (availableSpace > 0) {
-            // Use RAG to find relevant chunks instead of blind truncation
             if (typeof RAGEngine !== 'undefined') {
                 const retrieved = RAGEngine.retrieve(selectedContextText, prompt, availableSpace);
-                // If RAG returns something useful (and it's different/shorter than full text which we know is too long)
                 if (retrieved && retrieved.length < selectedContextText.length) {
                     contextToUse = retrieved;
                     showToast("Large context: Used relevant snippets.", "info");
                 } else {
-                    // Fallback if RAG fails or returns everything (shouldn't happen if logic is right)
                     contextToUse = contextToUse.substring(0, availableSpace) + "... (truncated)";
                     showToast("Context truncated to fit token limit.", "warning");
                 }
@@ -652,15 +663,71 @@ document.addEventListener("DOMContentLoaded", () => {
                 showToast("Context truncated to fit token limit.", "warning");
             }
           } else {
-            // If prompt is huge, we might not have space for context.
-            // Prioritize prompt, drop context or truncate heavily.
             contextToUse = contextToUse.substring(0, 100) + "... (truncated)";
           }
         }
-        finalPrompt = `Context:\n${contextToUse}\n\nQuestion:\n${prompt}`;
+        
+        // Construct the prompt string that INCLUDES context
+        finalPrompt = `Context:
+${contextToUse}
+
+Question:
+${prompt}`;
       }
 
-      streamResponse(finalPrompt);
+      // HISTORY LOGIC
+      let messagesToSend = [];
+      const enableHistory = enableHistoryCheckbox.checked;
+
+      // Check if context has changed
+      if (enableHistory) {
+          const currentContextSig = selectedContextText ? selectedContextText.substring(0, 100) + selectedContextText.length : "NO_CONTEXT";
+          const lastContextSig = lastContextSignature ? lastContextSignature.substring(0, 100) + lastContextSignature.length : "NO_CONTEXT";
+          
+          // If context changed, reset history
+          if (currentContextSig !== lastContextSig) {
+              conversationHistory = [];
+              lastContextSignature = selectedContextText;
+          }
+      } else {
+          // If history disabled, always reset (stateless)
+          conversationHistory = [];
+      }
+
+      if (enableHistory && conversationHistory.length > 0) {
+          // FOLLOW-UP QUESTION
+          // We assume the context was already sent in the history.
+          // BUT, if the previous message didn't have context (general chat) and now we have context, we must include it.
+          // Or if we had context and now we don't.
+          
+          // Simplification: If context is active now, we include it in THIS message if it wasn't the starter.
+          // Actually, if we cleared history on context change (above), then:
+          // 1. If history is empty: We are starting. Send `finalPrompt` (Context + Q).
+          // 2. If history is NOT empty: We are following up on SAME context. Send `prompt` (Q only).
+          
+          messagesToSend = [...conversationHistory, { role: "user", content: prompt }];
+      } else {
+          // FIRST QUESTION (or History Disabled)
+          // Send `finalPrompt` (Context + Q)
+          // We add `finalPrompt` to history so the context is remembered for next time.
+          messagesToSend = [{ role: "user", content: finalPrompt }];
+      }
+
+      streamResponse(messagesToSend, (aiResponse) => {
+          if (enableHistory) {
+              // Update History
+              if (conversationHistory.length === 0) {
+                  // First turn: save the context-laden prompt
+                  conversationHistory.push({ role: "user", content: finalPrompt });
+              } else {
+                  // Follow up: save the simple prompt
+                  conversationHistory.push({ role: "user", content: prompt });
+              }
+              conversationHistory.push({ role: "assistant", content: aiResponse });
+              saveConversationHistory();
+          }
+      });
+      
       promptInput.value = "";
     }
   });
@@ -671,24 +738,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  const maxTokensInput = document.getElementById("max-tokens");
-
-  // ... existing code ...
-
   const saveMaxTokens = () => {
     browser.storage.local.set({ maxTokens: maxTokensInput.value });
   };
+  
+  const saveEnableHistory = () => {
+      browser.storage.local.set({ enableHistory: enableHistoryCheckbox.checked });
+  };
 
-  const loadMaxTokens = async () => {
-    const data = await browser.storage.local.get("maxTokens");
+  const loadSettings = async () => {
+    const data = await browser.storage.local.get(["maxTokens", "enableHistory"]);
     if (data.maxTokens) {
       maxTokensInput.value = data.maxTokens;
+    }
+    if (data.enableHistory !== undefined) {
+        enableHistoryCheckbox.checked = data.enableHistory;
     }
   };
 
   maxTokensInput.addEventListener("change", saveMaxTokens);
-
-  // ... existing code ...
+  enableHistoryCheckbox.addEventListener("change", saveEnableHistory);
 
   summarizePageBtn.addEventListener("click", async () => {
     if (!modelSelect.value) {
@@ -704,35 +773,22 @@ document.addEventListener("DOMContentLoaded", () => {
       let finalContent = content;
 
       if (finalContent.length > charLimit) {
-        // Smart Selection Strategy
         const introLimit = Math.floor(charLimit * 0.2);
         const outroLimit = Math.floor(charLimit * 0.2);
         const middleLimit = charLimit - introLimit - outroLimit;
-
-        // 1. Introduction
         const intro = finalContent.substring(0, introLimit);
-
-        // 2. Conclusion
         const outro = finalContent.substring(finalContent.length - outroLimit);
-
-        // 3. Middle Chunks (Spread out)
-        // We take the middle section of the original text
         const middleText = finalContent.substring(introLimit, finalContent.length - outroLimit);
-        
         let middle = "";
         if (middleText.length > 0) {
-            // Split middleText into 3 parts and take a slice from each
             const step = Math.floor(middleText.length / 3);
             const chunkLen = Math.floor(middleLimit / 3);
-            
             for (let i = 0; i < 3; i++) {
                 const start = i * step;
-                // Ensure we don't go out of bounds
                 const slice = middleText.substring(start, start + chunkLen);
                 middle += "\n\n...[skipped]...\n\n" + slice;
             }
         }
-
         finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
         showToast(`Page content summarized via smart selection to fit limit.`, "info");
       }
@@ -743,13 +799,51 @@ document.addEventListener("DOMContentLoaded", () => {
         url: tab.url,
         favIconUrl: tab.favIconUrl,
       });
-      streamResponse(prompt);
+      
+      // RESET HISTORY for new summary
+      conversationHistory = [];
+      lastContextSignature = content; // Implicit context
+      
+      const messages = [{ role: "user", content: prompt }];
+      
+      streamResponse(messages, (aiResponse) => {
+          if (enableHistoryCheckbox.checked) {
+              conversationHistory.push(...messages);
+              conversationHistory.push({ role: "assistant", content: aiResponse });
+              saveConversationHistory();
+              
+              // Implicitly set context so user can ask follow ups
+              // We don't display the full text in the UI input box to save space,
+              // but we should probably tell the system we are "talking about this page"
+              // However, getPageContent doesn't persist to `selectedContextText`.
+              // To enable seamless follow-up, we should probably set selectedContextText 
+              // BUT if we do, the next message will re-send it.
+              // Our logic handles "Already in history" via conversationHistory[0].
+              // So if we just continue, it works!
+              
+              // BUT: next `sendPrompt` checks `selectedContextText`.
+              // If `selectedContextText` is empty, it thinks context changed?
+              // `lastContextSignature` is set to `content`.
+              // `selectedContextText` is "".
+              // They differ -> History cleared.
+              // So we MUST set `selectedContextText` if we want to follow up.
+              
+              updateContextDisplay(content, true, {
+                  title: tab.title,
+                  url: tab.url,
+                  favIconUrl: tab.favIconUrl
+              });
+          }
+      });
     }
   });
 
   clearChatBtn.addEventListener("click", () => {
     chatHistory.innerHTML = "";
+    conversationHistory = [];
+    lastContextSignature = "";
     saveChatHistory();
+    saveConversationHistory();
     updateInputPlaceholder();
   });
 
@@ -759,10 +853,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const init = async () => {
     await loadBaseUrl();
-    await loadMaxTokens();
+    await loadSettings();
 
-    // Check if configuration exists to auto-collapse
-    // We check baseUrlInput.value because it might be the default value which is valid
     const data = await browser.storage.local.get(["baseUrl", "selectedModel"]);
     if (data.baseUrl && data.selectedModel) {
       settingsPanel.classList.add("collapsed");
