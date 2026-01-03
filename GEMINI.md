@@ -1,6 +1,6 @@
 # Project Overview
 
-This project is Rallx browser AI, a Firefox browser extension that functions as a sidebar AI assistant. It connects to a local LLM server (like Ollama or LMStudio) to provide services like summarizing web pages and answering user questions. The extension features real-time text streaming of the LLM's responses, automatic detection of available models from the local server, and the ability to use the content of the active tab as context for the AI.
+This project is Rallx browser AI, a Firefox browser extension that functions as a sidebar AI assistant. It connects to local or remote LLM servers (like Ollama, LMStudio, Gemini, or OpenAI) to provide services like summarizing web pages and answering user questions. The extension features real-time text streaming of the LLM's responses, automatic detection of available models, and the ability to use the content of the active tab as context for the AI.
 
 The architecture is based on vanilla JavaScript, with no build steps required, making for a straightforward development process.
 
