@@ -215,9 +215,42 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (selectedContextText) {
+        const maxTokens =
+          parseInt(maxTokensInput.value, 10) || DEFAULT_CONTEXT_TOKEN_LIMIT;
+        const charLimit = maxTokens * 4;
+        let finalContent = selectedContextText;
+
+        if (finalContent.length > charLimit) {
+          if (enableRagCheckbox.checked) {
+              // Smart Selection Strategy
+              const introLimit = Math.floor(charLimit * 0.2);
+              const outroLimit = Math.floor(charLimit * 0.2);
+              const middleLimit = charLimit - introLimit - outroLimit;
+              const intro = finalContent.substring(0, introLimit);
+              const outro = finalContent.substring(finalContent.length - outroLimit);
+              const middleText = finalContent.substring(introLimit, finalContent.length - outroLimit);
+              let middle = "";
+              if (middleText.length > 0) {
+                  const step = Math.floor(middleText.length / 3);
+                  const chunkLen = Math.floor(middleLimit / 3);
+                  for (let i = 0; i < 3; i++) {
+                      const start = i * step;
+                      const slice = middleText.substring(start, start + chunkLen);
+                      middle += "\n\n...[skipped]...\n\n" + slice;
+                  }
+              }
+              finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
+              if (!hideContextToastsCheckbox.checked) showToast(`Selection content summarized via smart selection to fit limit.`, "info");
+          } else {
+              // Simple Truncation
+              finalContent = finalContent.substring(0, charLimit) + "... (truncated)";
+              if (!hideContextToastsCheckbox.checked) showToast(`Selection content truncated to fit limit.`, "warning");
+          }
+        }
+
         const prompt = `Summarize the following text:
 
-${selectedContextText}`;
+${finalContent}`;
         appendUserMessage("Summarize selection");
         
         // Context switch: Clear history for new distinct task
