@@ -235,16 +235,117 @@ html {
 .input-group {
   display: flex;
   gap: 5px;
+  align-items: center;
+}
+
+.password-wrapper,
+.url-wrapper {
+  position: relative;
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+}
+
+.password-wrapper input,
+.url-wrapper input {
+  width: 100%;
+  padding-right: 32px; /* Space for the icon */
+}
+
+.password-wrapper #toggle-api-key-visibility,
+.url-wrapper #pick-provider {
+  position: absolute;
+  right: 4px;
+  background: transparent;
+  padding: 4px;
+}
+
+.password-wrapper #toggle-api-key-visibility:hover,
+.url-wrapper #pick-provider:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.provider-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  width: 150px;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.provider-dropdown.hidden {
+  display: none;
+}
+
+.provider-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: background-color 0.2s;
+}
+
+.provider-option:hover {
+  background-color: var(--hover-color);
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+input[type="password"] {
   background-color: var(--input-bg);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   padding: 8px;
   border-radius: 4px;
   flex-grow: 1;
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.2s, border-color 0.2s;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background-color: var(--text-secondary);
+  border-radius: 50%;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+input[type="checkbox"]:checked::after {
+  transform: translateX(16px);
+  background-color: #131314;
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--text-secondary);
 }
 
 button {

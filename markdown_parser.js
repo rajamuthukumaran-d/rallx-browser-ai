@@ -45,8 +45,8 @@ const parseMarkdown = (text) => {
     html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
     html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
 
-    // Links
-    html = html.replace(/!\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    // Links - only allow http/https
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
 
     // Unordered Lists (simple heuristic: line starting with - or * ) 
     // Wrapping in <ul> is hard with regex-only on stream, so we use line breaks and bullets.

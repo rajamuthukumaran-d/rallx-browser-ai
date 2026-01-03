@@ -8,6 +8,9 @@
     "scripting",
     "storage"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
   "host_permissions": [
     "http://localhost/*",
     "http://127.0.0.1/*"

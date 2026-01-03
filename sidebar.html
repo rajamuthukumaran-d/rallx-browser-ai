@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Rallx browser AI</title>
   <link rel="stylesheet" type="text/css" href="sidebar.css">
   <meta charset="utf-8">
 </head>
+
 <body>
   <div class="app-container">
     <!-- Settings Panel (Overlay/Collapsible) -->
@@ -14,122 +16,158 @@
       </button>
       <div class="setting-item">
         <div class="label-with-info">
-            <label for="base-url">LLM Base URL</label>
-            <div class="info-icon-wrapper">
-                <img src="assets/icons/info.svg" class="info-icon-img">
-                <span class="tooltip-text tooltip-bottom">The API endpoint for your local LLM server (e.g., Ollama or LM Studio).</span>
-            </div>
+          <label for="base-url">LLM Base URL</label>
+          <div class="info-icon-wrapper">
+            <img src="assets/icons/info.svg" class="info-icon-img">
+            <span class="tooltip-text tooltip-bottom">The API endpoint for your local LLM server (e.g., Ollama or LM
+              Studio).</span>
+          </div>
         </div>
         <div class="input-group">
+          <div class="url-wrapper">
             <input type="text" id="base-url" value="http://localhost:1234/v1">
-            <button id="save-base-url">Save</button>
+            <button id="pick-provider" class="icon-button" title="Pick Provider">
+              <img src="assets/icons/pick.svg" class="icon-img" alt="Pick">
+            </button>
+            <div id="provider-dropdown" class="provider-dropdown hidden">
+              <div class="provider-option" data-url="http://localhost:1234/v1">LM Studio</div>
+              <div class="provider-option" data-url="http://localhost:11434/v1">Ollama</div>
+              <div class="provider-option" data-url="https://generativelanguage.googleapis.com/v1beta/openai">Gemini
+              </div>
+              <div class="provider-option" data-url="https://api.openai.com/v1">ChatGPT</div>
+            </div>
+          </div>
+          <button id="save-base-url">Save</button>
         </div>
       </div>
       <div class="setting-item">
         <div class="label-with-info">
-            <label for="max-tokens">Max Context Tokens</label>
-            <div class="info-icon-wrapper">
-                <img src="assets/icons/info.svg" class="info-icon-img">
-                <span class="tooltip-text">Maximum tokens to use for context (chat history + page content). Higher values use more memory.</span>
-            </div>
+          <label for="api-key">API Key (Optional)</label>
+          <div class="info-icon-wrapper">
+            <img src="assets/icons/info.svg" class="info-icon-img">
+            <span class="tooltip-text tooltip-bottom">API Key for authentication if your provider requires it. Stored
+              encrypted locally.</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <div class="password-wrapper">
+            <input type="password" id="api-key">
+            <button id="toggle-api-key-visibility" class="icon-button" title="Show/Hide API Key">
+              <img src="assets/icons/visibility_off.svg" class="icon-img" alt="Show/Hide">
+            </button>
+          </div>
+          <button id="save-api-key">Save</button>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="label-with-info">
+          <label for="max-tokens">Max Context Tokens</label>
+          <div class="info-icon-wrapper">
+            <img src="assets/icons/info.svg" class="info-icon-img">
+            <span class="tooltip-text">Maximum tokens to use for context (chat history + page content). Higher values
+              use more memory.</span>
+          </div>
         </div>
         <input type="number" id="max-tokens" value="3098" step="128" min="128">
       </div>
       <div class="setting-item-row">
         <div class="label-with-info">
-            <label for="enable-rag">Smart context</label>
-            <div class="info-icon-wrapper">
-                <img src="assets/icons/info.svg" class="info-icon-img">
-                <span class="tooltip-text">Uses RAG (retrieval) to select relevant text from large pages instead of truncating. This helps maintain context for complex pages and reduces token waste by only sending relevant content to the LLM for processing.</span>
-            </div>
+          <label for="enable-rag">Smart context (Alpha)</label>
+          <div class="info-icon-wrapper">
+            <img src="assets/icons/info.svg" class="info-icon-img">
+            <span class="tooltip-text">Uses RAG (retrieval) to select relevant text from large pages instead of
+              truncating. This helps maintain context for complex pages and reduces token waste by only sending relevant
+              content to the LLM for processing.</span>
+          </div>
         </div>
         <input type="checkbox" id="enable-rag" checked>
       </div>
       <div class="setting-item-row">
         <div class="label-with-info">
-            <label for="enable-history">Enable follow up questions</label>
-            <div class="info-icon-wrapper">
-                <img src="assets/icons/info.svg" class="info-icon-img">
-                <span class="tooltip-text">Allows the AI to remember previous messages in the conversation for context. Disabling this will increase the amount of tokens used for context.</span>
-            </div>
+          <label for="enable-history">Enable follow up questions</label>
+          <div class="info-icon-wrapper">
+            <img src="assets/icons/info.svg" class="info-icon-img">
+            <span class="tooltip-text">Allows the AI to remember previous messages in the conversation for context.
+              Disabling this will increase the amount of tokens used for context.</span>
+          </div>
         </div>
         <input type="checkbox" id="enable-history" checked>
       </div>
       <div class="setting-item-row">
         <div class="label-with-info">
-            <label for="hide-context-toasts">Hide context warnings</label>
-            <div class="info-icon-wrapper">
-                <img src="assets/icons/info.svg" class="info-icon-img">
-                <span class="tooltip-text">Suppress toast notifications when context is truncated or smart-selected.</span>
-            </div>
+          <label for="hide-context-toasts">Hide context warnings</label>
+          <div class="info-icon-wrapper">
+            <img src="assets/icons/info.svg" class="info-icon-img">
+            <span class="tooltip-text">Suppress toast notifications when context is truncated or smart-selected.</span>
+          </div>
         </div>
         <input type="checkbox" id="hide-context-toasts" checked>
       </div>
       <div class="setting-item">
-          <button id="refresh-models" class="full-width-btn">Sync Models</button>
+        <button id="refresh-models" class="full-width-btn">Sync Models</button>
       </div>
       <div class="setting-item">
-          <button id="clear-chat" class="full-width-btn danger">
-            Clear Chat
-          </button>
+        <button id="clear-chat" class="full-width-btn danger">
+          Clear Chat
+        </button>
       </div>
     </div>
 
     <!-- Chat Area -->
     <div id="chat-history" class="chat-history">
-        <!-- Welcome/Empty State could go here -->
+      <!-- Welcome/Empty State could go here -->
     </div>
 
     <!-- Context Indicator (Floating or above input) -->
     <div id="context-indicator" class="context-indicator" style="display: none;">
       <div class="context-card">
-          <div class="context-icon-wrapper">
-              <img id="context-icon" class="context-icon-img" style="display: none;">
-              <div id="context-icon-placeholder" class="context-icon-placeholder">📄</div>
-          </div>
-          <div class="context-info">
-              <div id="context-title" class="context-title">Context</div>
-              <div id="context-details" class="context-details"></div>
-          </div>
-          <button id="remove-context" class="remove-context-btn">
-            <img src="assets/icons/close.svg" class="icon-img" alt="Remove">
-          </button>
+        <div class="context-icon-wrapper">
+          <img id="context-icon" class="context-icon-img" style="display: none;">
+          <div id="context-icon-placeholder" class="context-icon-placeholder">📄</div>
+        </div>
+        <div class="context-info">
+          <div id="context-title" class="context-title">Context</div>
+          <div id="context-details" class="context-details"></div>
+        </div>
+        <button id="remove-context" class="remove-context-btn">
+          <img src="assets/icons/close.svg" class="icon-img" alt="Remove">
+        </button>
       </div>
     </div>
 
     <!-- Bottom Input Area -->
     <div class="input-area">
-       <!-- Action Chips (Summarize Page) -->
-       <div class="action-chips">
-           <button id="summarize-page" class="chip">Summarize this page</button>
-           <button id="summarize-selection" class="chip" style="display: none;">Summarize selection</button>
-           <button id="add-page-context" class="chip">Ask from this page</button>
-       </div>
+      <!-- Action Chips (Summarize Page) -->
+      <div class="action-chips">
+        <button id="summarize-page" class="chip">Summarize this page</button>
+        <button id="summarize-selection" class="chip" style="display: none;">Summarize selection</button>
+        <button id="add-page-context" class="chip">Ask from this page</button>
+      </div>
 
       <div class="input-box">
         <textarea id="prompt-input" placeholder="Ask anything..."></textarea>
-        
+
         <div class="input-toolbar">
           <div class="left-tools">
             <button id="clear-chat-toolbar" class="tool-btn" title="Clear Chat">
-                <img src="assets/icons/clear_all.svg" class="icon-img" alt="Clear">
+              <img src="assets/icons/clear_all.svg" class="icon-img" alt="Clear">
             </button>
             <button id="settings-toggle-toolbar" class="tool-btn" title="Settings">
-                <img src="assets/icons/settings.svg" class="icon-img" alt="Settings">
+              <img src="assets/icons/settings.svg" class="icon-img" alt="Settings">
             </button>
           </div>
           <div class="right-tools">
             <div class="model-selector-wrapper">
-                <select id="model-select"></select>
-                <span class="dropdown-arrow">
-                    <img src="assets/icons/arrow_down.svg" class="icon-img" alt="v">
-                </span>
+              <select id="model-select"></select>
+              <span class="dropdown-arrow">
+                <img src="assets/icons/arrow_down.svg" class="icon-img" alt="v">
+              </span>
             </div>
             <button id="send-prompt" class="send-btn">
-                <img src="assets/icons/send.svg" class="icon-img" alt="Send">
+              <img src="assets/icons/send.svg" class="icon-img" alt="Send">
             </button>
             <button id="stop-generating" class="stop-btn" style="display: none;">
-                <img src="assets/icons/stop.svg" class="icon-img" alt="Stop">
+              <img src="assets/icons/stop.svg" class="icon-img" alt="Stop">
             </button>
           </div>
         </div>
@@ -140,6 +178,8 @@
   <div id="toast" class="toast hidden"></div>
   <script src="markdown_parser.js"></script>
   <script src="rag.js"></script>
+  <script src="encryption_utils.js"></script>
   <script src="sidebar.js"></script>
 </body>
+
 </html>
