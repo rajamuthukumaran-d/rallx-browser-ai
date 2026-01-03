@@ -1052,6 +1052,37 @@ ${prompt}`;
     getModels();
   });
 
+  const initializeContext = async () => {
+      try {
+        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        if (tabs && tabs.length > 0) {
+            const response = await browser.tabs.sendMessage(tabs[0].id, { action: "get_selection" });
+            const currentSelection = response && response.selection ? response.selection.trim() : "";
+            
+            if (currentSelection) {
+                updateContextDisplay(currentSelection, false, {
+                    title: tabs[0].title,
+                    url: tabs[0].url,
+                    favIconUrl: tabs[0].favIconUrl
+                });
+                return;
+            }
+        }
+      } catch (error) {
+          // Ignore errors (e.g. restricted pages)
+      }
+
+      // Fallback to page content
+      const result = await getPageContent();
+      if (result) {
+        updateContextDisplay(result.content, true, {
+          title: result.tab.title,
+          url: result.tab.url,
+          favIconUrl: result.tab.favIconUrl,
+        });
+      }
+  };
+
   const init = async () => {
     await initializeEncryption();
     await loadBaseUrl();
@@ -1065,6 +1096,7 @@ ${prompt}`;
 
     getModels();
     loadChatHistory();
+    initializeContext();
   };
 
   init();
