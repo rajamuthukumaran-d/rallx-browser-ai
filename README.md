@@ -65,6 +65,32 @@ The project follows a clean, modular Vanilla JS architecture:
 - `background.js` - Background event handling.
 - `content_script.js` - Script injected into pages to read content.
 
+## 🛠️ Troubleshooting
+
+### 1. Inaccurate or Irrelevant Answers
+If you notice the AI is providing inaccurate information or ignoring parts of the page:
+- **Try turning off "Smart Context (Alpha)":** This feature uses retrieval logic to select relevant text from large pages. For some documents, sending the full (truncated) text may yield better results.
+- **Increase Max Context Tokens:** If your model supports larger contexts, increasing this value allows more of the page content to be sent to the AI.
+
+### 2. Connection Issues (CORS)
+Since the extension runs in the browser, providers must allow Cross-Origin Resource Sharing (CORS):
+- **Ollama:** Set the environment variable `OLLAMA_ORIGINS="*"` before starting Ollama.
+- **LM Studio:** Ensure the "CORS" toggle is enabled in the Local Server settings.
+- **Other Providers:** If you see a "403 Forbidden" or "Network Error," check if the server allows requests from browser extensions.
+
+### 3. "No Connection" or Empty Model List
+- Verify that your **Base URL** is correct and includes the `/v1` suffix (e.g., `http://localhost:11434/v1`).
+- Ensure the LLM server is running and accessible from your machine.
+- If using an API key, ensure it is saved correctly in the settings.
+
+### 4. Page Content Not Detected
+- **Refresh the page:** The content script might not have loaded if the page was already open before the extension was installed/reloaded.
+- **Restricted Pages:** Browser extensions cannot access certain pages (e.g., `about:`, `addons.mozilla.org`, or internal Firefox pages) for security reasons.
+
+## 📄 License
+
+This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for details.
+
 ## 🤝 Contributing
 
 This project is built to be simple and hackable. Since there is no build step, you can just edit the files and click "Reload" in the Firefox debugging dashboard to see your changes immediately.

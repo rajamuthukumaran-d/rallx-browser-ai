@@ -1,3 +1,21 @@
+/**
+ * Rallx Browser AI
+ * Copyright (C) 2026 Rajamuthukumaran D
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 document.addEventListener("DOMContentLoaded", () => {
   const baseUrlInput = document.getElementById("base-url");
   const apiKeyInput = document.getElementById("api-key");
@@ -26,20 +44,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const enableHistoryCheckbox = document.getElementById("enable-history");
   const enableRagCheckbox = document.getElementById("enable-rag");
-  const hideContextToastsCheckbox = document.getElementById("hide-context-toasts");
+  const hideContextToastsCheckbox = document.getElementById(
+    "hide-context-toasts"
+  );
   const maxTokensInput = document.getElementById("max-tokens");
 
   let cryptoKey = null;
 
   const initializeEncryption = async () => {
-      const data = await browser.storage.local.get("masterKeyJWK");
-      if (data.masterKeyJWK) {
-          cryptoKey = await EncryptionUtils.importKey(data.masterKeyJWK);
-      } else {
-          cryptoKey = await EncryptionUtils.generateKey();
-          const jwk = await EncryptionUtils.exportKey(cryptoKey);
-          await browser.storage.local.set({ masterKeyJWK: jwk });
-      }
+    const data = await browser.storage.local.get("masterKeyJWK");
+    if (data.masterKeyJWK) {
+      cryptoKey = await EncryptionUtils.importKey(data.masterKeyJWK);
+    } else {
+      cryptoKey = await EncryptionUtils.generateKey();
+      const jwk = await EncryptionUtils.exportKey(cryptoKey);
+      await browser.storage.local.set({ masterKeyJWK: jwk });
+    }
   };
 
   if (settingsToggle) {
@@ -108,12 +128,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (disabled) {
       sendPromptBtn.classList.add("disabled");
       if (summarizePageBtn) summarizePageBtn.classList.add("disabled");
-      if (summarizeSelectionBtn) summarizeSelectionBtn.classList.add("disabled");
+      if (summarizeSelectionBtn)
+        summarizeSelectionBtn.classList.add("disabled");
       if (addPageContextBtn) addPageContextBtn.classList.add("disabled");
     } else {
       sendPromptBtn.classList.remove("disabled");
       if (summarizePageBtn) summarizePageBtn.classList.remove("disabled");
-      if (summarizeSelectionBtn) summarizeSelectionBtn.classList.remove("disabled");
+      if (summarizeSelectionBtn)
+        summarizeSelectionBtn.classList.remove("disabled");
       if (addPageContextBtn) addPageContextBtn.classList.remove("disabled");
     }
   };
@@ -123,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedContextText = "";
   let lastIgnoredSelection = "";
   let isPageContext = false;
-  
+
   // Chat History State
   let conversationHistory = [];
   let fullMessageLog = []; // Persistent history of all messages
@@ -131,9 +153,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const updateInputPlaceholder = () => {
     const enableHistory = enableHistoryCheckbox.checked;
-    const currentContextSig = selectedContextText ? selectedContextText.substring(0, 100) + selectedContextText.length : "NO_CONTEXT";
-    const lastSig = lastContextSignature ? lastContextSignature.substring(0, 100) + lastContextSignature.length : "NO_CONTEXT";
-    
+    const currentContextSig = selectedContextText
+      ? selectedContextText.substring(0, 100) + selectedContextText.length
+      : "NO_CONTEXT";
+    const lastSig = lastContextSignature
+      ? lastContextSignature.substring(0, 100) + lastContextSignature.length
+      : "NO_CONTEXT";
+
     const isSameContext = currentContextSig === lastSig;
 
     if (enableHistory && conversationHistory.length > 0 && isSameContext) {
@@ -222,29 +248,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (finalContent.length > charLimit) {
           if (enableRagCheckbox.checked) {
-              // Smart Selection Strategy
-              const introLimit = Math.floor(charLimit * 0.2);
-              const outroLimit = Math.floor(charLimit * 0.2);
-              const middleLimit = charLimit - introLimit - outroLimit;
-              const intro = finalContent.substring(0, introLimit);
-              const outro = finalContent.substring(finalContent.length - outroLimit);
-              const middleText = finalContent.substring(introLimit, finalContent.length - outroLimit);
-              let middle = "";
-              if (middleText.length > 0) {
-                  const step = Math.floor(middleText.length / 3);
-                  const chunkLen = Math.floor(middleLimit / 3);
-                  for (let i = 0; i < 3; i++) {
-                      const start = i * step;
-                      const slice = middleText.substring(start, start + chunkLen);
-                      middle += "\n\n...[skipped]...\n\n" + slice;
-                  }
+            // Smart Selection Strategy
+            const introLimit = Math.floor(charLimit * 0.2);
+            const outroLimit = Math.floor(charLimit * 0.2);
+            const middleLimit = charLimit - introLimit - outroLimit;
+            const intro = finalContent.substring(0, introLimit);
+            const outro = finalContent.substring(
+              finalContent.length - outroLimit
+            );
+            const middleText = finalContent.substring(
+              introLimit,
+              finalContent.length - outroLimit
+            );
+            let middle = "";
+            if (middleText.length > 0) {
+              const step = Math.floor(middleText.length / 3);
+              const chunkLen = Math.floor(middleLimit / 3);
+              for (let i = 0; i < 3; i++) {
+                const start = i * step;
+                const slice = middleText.substring(start, start + chunkLen);
+                middle += "\n\n...[skipped]...\n\n" + slice;
               }
-              finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
-              if (!hideContextToastsCheckbox.checked) showToast(`Selection content summarized via smart selection to fit limit.`, "info");
+            }
+            finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
+            if (!hideContextToastsCheckbox.checked)
+              showToast(
+                `Selection content summarized via smart selection to fit limit.`,
+                "info"
+              );
           } else {
-              // Simple Truncation
-              finalContent = finalContent.substring(0, charLimit) + "... (truncated)";
-              if (!hideContextToastsCheckbox.checked) showToast(`Selection content truncated to fit limit.`, "warning");
+            // Simple Truncation
+            finalContent =
+              finalContent.substring(0, charLimit) + "... (truncated)";
+            if (!hideContextToastsCheckbox.checked)
+              showToast(`Selection content truncated to fit limit.`, "warning");
           }
         }
 
@@ -252,20 +289,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 ${finalContent}`;
         appendUserMessage("Summarize selection");
-        
+
         // Context switch: Clear history for new distinct task
         conversationHistory = [];
         lastContextSignature = selectedContextText;
 
         const messages = [{ role: "user", content: prompt }];
-        
+
         streamResponse(messages, (aiResponse) => {
-            if (enableHistoryCheckbox.checked) {
-                conversationHistory.push(...messages);
-                conversationHistory.push({ role: "assistant", content: aiResponse });
-                saveConversationHistory();
-                updateInputPlaceholder();
-            }
+          if (enableHistoryCheckbox.checked) {
+            conversationHistory.push(...messages);
+            conversationHistory.push({
+              role: "assistant",
+              content: aiResponse,
+            });
+            saveConversationHistory();
+            updateInputPlaceholder();
+          }
         });
       }
     });
@@ -297,18 +337,20 @@ ${finalContent}`;
       // Ignore current selection to prevent immediate revert
       try {
         const tabs = await browser.tabs.query({
-            active: true,
-            currentWindow: true,
+          active: true,
+          currentWindow: true,
         });
         if (tabs && tabs.length > 0) {
-            const response = await browser.tabs.sendMessage(tabs[0].id, {
-                action: "get_selection",
-            });
-            if (response && response.selection) {
-                lastIgnoredSelection = response.selection.trim();
-            }
+          const response = await browser.tabs.sendMessage(tabs[0].id, {
+            action: "get_selection",
+          });
+          if (response && response.selection) {
+            lastIgnoredSelection = response.selection.trim();
+          }
         }
-      } catch(e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
 
       const result = await getPageContent();
       if (result) {
@@ -387,17 +429,19 @@ ${finalContent}`;
     const apiKey = apiKeyInput.value;
     const headers = {};
     if (apiKey) {
-        headers["Authorization"] = `Bearer ${apiKey}`;
+      headers["Authorization"] = `Bearer ${apiKey}`;
     }
-    
+
     try {
       const response = await fetch(`${baseUrl}/models`, { headers });
-      
+
       if (!response.ok) {
-          if (response.status === 403) {
-              throw new Error("403 Forbidden. Check API Key or CORS settings (e.g. OLLAMA_ORIGINS=\"*\").");
-          }
-          throw new Error(`HTTP Error: ${response.status}`);
+        if (response.status === 403) {
+          throw new Error(
+            '403 Forbidden. Check API Key or CORS settings (e.g. OLLAMA_ORIGINS="*").'
+          );
+        }
+        throw new Error(`HTTP Error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -432,8 +476,10 @@ ${finalContent}`;
       modelSelect.innerHTML =
         "<option disabled selected>No Connection</option>";
       if (closeSettingsBtn) closeSettingsBtn.disabled = true;
-      
-      const msg = error.message.includes("403") ? error.message : "Could not connect to LLM Server. Check URL.";
+
+      const msg = error.message.includes("403")
+        ? error.message
+        : "Could not connect to LLM Server. Check URL.";
       showToast(msg, "warning");
       updateButtonStates();
     }
@@ -452,7 +498,7 @@ ${finalContent}`;
       if (!cryptoKey) await initializeEncryption();
       const decrypted = await EncryptionUtils.decrypt(data.apiKey, cryptoKey);
       if (decrypted !== null) {
-          apiKeyInput.value = decrypted;
+        apiKeyInput.value = decrypted;
       }
     }
   };
@@ -481,62 +527,70 @@ ${finalContent}`;
 
   const pickProviderBtn = document.getElementById("pick-provider");
   const providerDropdown = document.getElementById("provider-dropdown");
-  
+
   if (pickProviderBtn && providerDropdown) {
-      pickProviderBtn.addEventListener("click", (e) => {
-          e.stopPropagation(); // Prevent document click from closing immediately
-          providerDropdown.classList.toggle("hidden");
-      });
+    pickProviderBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent document click from closing immediately
+      providerDropdown.classList.toggle("hidden");
+    });
 
-      const options = providerDropdown.querySelectorAll(".provider-option");
-      options.forEach(option => {
-          option.addEventListener("click", () => {
-              baseUrlInput.value = option.getAttribute("data-url");
-              providerDropdown.classList.add("hidden");
-          });
+    const options = providerDropdown.querySelectorAll(".provider-option");
+    options.forEach((option) => {
+      option.addEventListener("click", () => {
+        baseUrlInput.value = option.getAttribute("data-url");
+        providerDropdown.classList.add("hidden");
       });
+    });
 
-      // Close on outside click logic is mostly handled by the existing document click listener
-      // but that listener specifically targets settings-panel collapse. 
-      // We should add logic for this specific dropdown or make the existing one generic.
-      
-      document.addEventListener("click", (e) => {
-          if (!providerDropdown.classList.contains("hidden") && 
-              !providerDropdown.contains(e.target) && 
-              !pickProviderBtn.contains(e.target)) {
-              providerDropdown.classList.add("hidden");
-          }
-      });
+    // Close on outside click logic is mostly handled by the existing document click listener
+    // but that listener specifically targets settings-panel collapse.
+    // We should add logic for this specific dropdown or make the existing one generic.
+
+    document.addEventListener("click", (e) => {
+      if (
+        !providerDropdown.classList.contains("hidden") &&
+        !providerDropdown.contains(e.target) &&
+        !pickProviderBtn.contains(e.target)
+      ) {
+        providerDropdown.classList.add("hidden");
+      }
+    });
   }
 
   const saveApiKeyBtn = document.getElementById("save-api-key");
-  const toggleApiKeyVisibilityBtn = document.getElementById("toggle-api-key-visibility");
-  
+  const toggleApiKeyVisibilityBtn = document.getElementById(
+    "toggle-api-key-visibility"
+  );
+
   const saveApiKey = async () => {
     if (!cryptoKey) await initializeEncryption();
-    const encrypted = await EncryptionUtils.encrypt(apiKeyInput.value, cryptoKey);
+    const encrypted = await EncryptionUtils.encrypt(
+      apiKeyInput.value,
+      cryptoKey
+    );
     browser.storage.local.set({ apiKey: encrypted });
   };
-  
+
   if (saveApiKeyBtn) {
-      saveApiKeyBtn.addEventListener("click", () => {
-        saveApiKey();
-        getModels();
-      });
+    saveApiKeyBtn.addEventListener("click", () => {
+      saveApiKey();
+      getModels();
+    });
   }
 
   if (toggleApiKeyVisibilityBtn) {
-      toggleApiKeyVisibilityBtn.addEventListener("click", () => {
-          const type = apiKeyInput.getAttribute("type") === "password" ? "text" : "password";
-          apiKeyInput.setAttribute("type", type);
-          
-          const icon = toggleApiKeyVisibilityBtn.querySelector("img");
-          if (type === "text") {
-              icon.src = "assets/icons/visibility_on.svg";
-          } else {
-              icon.src = "assets/icons/visibility_off.svg";
-          }
-      });
+    toggleApiKeyVisibilityBtn.addEventListener("click", () => {
+      const type =
+        apiKeyInput.getAttribute("type") === "password" ? "text" : "password";
+      apiKeyInput.setAttribute("type", type);
+
+      const icon = toggleApiKeyVisibilityBtn.querySelector("img");
+      if (type === "text") {
+        icon.src = "assets/icons/visibility_on.svg";
+      } else {
+        icon.src = "assets/icons/visibility_off.svg";
+      }
+    });
   }
 
   const clearChatToolbar = document.getElementById("clear-chat-toolbar");
@@ -555,95 +609,102 @@ ${finalContent}`;
 
   const renderMessage = (message) => {
     const messageElement = document.createElement("div");
-    messageElement.classList.add("message", message.role === "user" ? "user" : "ai");
+    messageElement.classList.add(
+      "message",
+      message.role === "user" ? "user" : "ai"
+    );
 
     const messageContent = document.createElement("div");
     messageContent.classList.add("message-content");
     messageContent.style.flexGrow = "1";
 
     if (message.role === "user") {
-        messageContent.textContent = message.content;
-        
-        if (message.metadata) {
-            const card = document.createElement("div");
-            card.className = "page-card";
+      messageContent.textContent = message.content;
 
-            if (message.metadata.favIconUrl) {
-                const icon = document.createElement("img");
-                icon.className = "page-card-icon";
-                icon.src = message.metadata.favIconUrl;
-                card.appendChild(icon);
-            } else {
-                const icon = document.createElement("div");
-                icon.className = "page-card-icon";
-                icon.textContent = "📄";
-                icon.style.display = "flex";
-                icon.style.alignItems = "center";
-                icon.style.justifyContent = "center";
-                card.appendChild(icon);
-            }
+      if (message.metadata) {
+        const card = document.createElement("div");
+        card.className = "page-card";
 
-            const info = document.createElement("div");
-            info.className = "page-card-info";
-
-            const title = document.createElement("div");
-            title.className = "page-card-title";
-            title.textContent = message.metadata.title || "Web Page";
-
-            const url = document.createElement("div");
-            url.className = "page-card-url";
-            try {
-                const urlObj = new URL(message.metadata.url);
-                url.textContent = urlObj.hostname;
-            } catch (e) {
-                url.textContent = message.metadata.url;
-            }
-
-            info.appendChild(title);
-            info.appendChild(url);
-            card.appendChild(info);
-            messageContent.appendChild(card);
+        if (message.metadata.favIconUrl) {
+          const icon = document.createElement("img");
+          icon.className = "page-card-icon";
+          icon.src = message.metadata.favIconUrl;
+          card.appendChild(icon);
+        } else {
+          const icon = document.createElement("div");
+          icon.className = "page-card-icon";
+          icon.textContent = "📄";
+          icon.style.display = "flex";
+          icon.style.alignItems = "center";
+          icon.style.justifyContent = "center";
+          card.appendChild(icon);
         }
+
+        const info = document.createElement("div");
+        info.className = "page-card-info";
+
+        const title = document.createElement("div");
+        title.className = "page-card-title";
+        title.textContent = message.metadata.title || "Web Page";
+
+        const url = document.createElement("div");
+        url.className = "page-card-url";
+        try {
+          const urlObj = new URL(message.metadata.url);
+          url.textContent = urlObj.hostname;
+        } catch (e) {
+          url.textContent = message.metadata.url;
+        }
+
+        info.appendChild(title);
+        info.appendChild(url);
+        card.appendChild(info);
+        messageContent.appendChild(card);
+      }
     } else {
-        // AI Message
-        messageContent.innerHTML = DOMPurify.sanitize(parseMarkdown(message.content), { ADD_ATTR: ['target'] });
+      // AI Message
+      messageContent.innerHTML = DOMPurify.sanitize(
+        parseMarkdown(message.content),
+        { ADD_ATTR: ["target"] }
+      );
     }
 
     messageElement.appendChild(messageContent);
 
     if (message.role === "assistant") {
-        const footer = document.createElement("div");
-        footer.style.display = "flex";
-        footer.style.alignItems = "center";
-        footer.style.marginTop = "5px";
+      const footer = document.createElement("div");
+      footer.style.display = "flex";
+      footer.style.alignItems = "center";
+      footer.style.marginTop = "5px";
 
-        const copyButton = document.createElement("button");
-        const copyIcon = document.createElement("img");
-        copyIcon.src = "assets/icons/copy.svg";
-        copyIcon.className = "icon-img";
-        copyButton.appendChild(copyIcon);
-        copyButton.style.marginLeft = "0";
-        
-        copyButton.addEventListener("click", () => {
-            navigator.clipboard.writeText(message.content);
-        });
+      const copyButton = document.createElement("button");
+      const copyIcon = document.createElement("img");
+      copyIcon.src = "assets/icons/copy.svg";
+      copyIcon.className = "icon-img";
+      copyButton.appendChild(copyIcon);
+      copyButton.style.marginLeft = "0";
 
-        footer.appendChild(copyButton);
-        
-        // Restore stats if available, else just model name if we saved it?
-        // For now, minimal footer
-        if (message.metadata && message.metadata.model) {
-             const statsSpan = document.createElement("span");
-             statsSpan.style.fontSize = "11px";
-             statsSpan.style.color = "var(--text-secondary)";
-             statsSpan.style.marginLeft = "10px";
-             // Clean model name
-             const modelName = message.metadata.model.split("/").pop();
-             statsSpan.textContent = modelName.charAt(0).toUpperCase() + modelName.slice(1);
-             footer.appendChild(statsSpan);
-        }
+      copyButton.addEventListener("click", () => {
+        navigator.clipboard.writeText(message.content);
+      });
 
-        messageElement.appendChild(footer);
+      footer.appendChild(copyButton);
+
+      // Restore stats if available, else just model name if we saved it?
+      // For now, minimal footer
+      if (message.metadata && message.metadata.model) {
+        const statsSpan = document.createElement("span");
+        statsSpan.style.fontSize = "11px";
+        statsSpan.style.color = "var(--text-secondary)";
+        statsSpan.style.marginLeft = "10px";
+        // Clean model name
+        const modelName = message.metadata.model.split("/").pop();
+        statsSpan.textContent =
+          modelName.charAt(0).toUpperCase() + modelName.slice(1);
+        footer.appendChild(statsSpan);
+      }
+
+      messageElement.appendChild(footer);
     }
 
     chatHistory.appendChild(messageElement);
@@ -653,36 +714,41 @@ ${finalContent}`;
   const saveMessageLog = () => {
     browser.storage.local.set({ messageLog: fullMessageLog });
   };
-  
+
   const saveConversationHistory = () => {
     browser.storage.local.set({
-        conversationHistory: conversationHistory,
-        lastContextSignature: lastContextSignature
+      conversationHistory: conversationHistory,
+      lastContextSignature: lastContextSignature,
     });
   };
 
   const loadChatHistory = async () => {
-    const data = await browser.storage.local.get(["messageLog", "chatHistory", "conversationHistory", "lastContextSignature"]);
-    
+    const data = await browser.storage.local.get([
+      "messageLog",
+      "chatHistory",
+      "conversationHistory",
+      "lastContextSignature",
+    ]);
+
     // Migration: Security clear of old HTML history
     if (data.chatHistory && !data.messageLog) {
-        browser.storage.local.remove("chatHistory");
-        chatHistory.innerHTML = "";
-        // We start fresh
+      browser.storage.local.remove("chatHistory");
+      chatHistory.innerHTML = "";
+      // We start fresh
     }
 
     if (data.messageLog) {
-        fullMessageLog = data.messageLog;
-        fullMessageLog.forEach(msg => renderMessage(msg));
+      fullMessageLog = data.messageLog;
+      fullMessageLog.forEach((msg) => renderMessage(msg));
     }
-    
+
     if (data.conversationHistory) {
-        conversationHistory = data.conversationHistory;
+      conversationHistory = data.conversationHistory;
     }
     if (data.lastContextSignature) {
-        lastContextSignature = data.lastContextSignature;
+      lastContextSignature = data.lastContextSignature;
     }
-    
+
     updateInputPlaceholder();
   };
 
@@ -707,13 +773,13 @@ ${finalContent}`;
 
     const startTime = Date.now();
     let tokenCount = 0;
-    
+
     const apiKey = apiKeyInput.value;
     const headers = {
       "Content-Type": "application/json",
     };
     if (apiKey) {
-        headers["Authorization"] = `Bearer ${apiKey}`;
+      headers["Authorization"] = `Bearer ${apiKey}`;
     }
 
     try {
@@ -729,10 +795,12 @@ ${finalContent}`;
       });
 
       if (!response.ok) {
-          if (response.status === 403) {
-              throw new Error("403 Forbidden. Check API Key or CORS settings (e.g. OLLAMA_ORIGINS=\"*\").");
-          }
-          throw new Error(`HTTP Error: ${response.status}`);
+        if (response.status === 403) {
+          throw new Error(
+            '403 Forbidden. Check API Key or CORS settings (e.g. OLLAMA_ORIGINS="*").'
+          );
+        }
+        throw new Error(`HTTP Error: ${response.status}`);
       }
 
       chatHistory.removeChild(loadingIndicator);
@@ -803,7 +871,10 @@ ${finalContent}`;
                 const content = json.choices[0].delta.content;
                 fullContent += content;
                 tokenCount++;
-                messageContent.innerHTML = DOMPurify.sanitize(parseMarkdown(fullContent), { ADD_ATTR: ['target'] });
+                messageContent.innerHTML = DOMPurify.sanitize(
+                  parseMarkdown(fullContent),
+                  { ADD_ATTR: ["target"] }
+                );
                 chatHistory.scrollTop = chatHistory.scrollHeight;
               }
             } catch (error) {
@@ -817,25 +888,25 @@ ${finalContent}`;
       const duration = (endTime - startTime) / 1000;
       const tps = duration > 0 ? (tokenCount / duration).toFixed(1) : 0;
       const modelName = modelSelect.value.split("/").pop();
-      const displayModel = modelName.charAt(0).toUpperCase() + modelName.slice(1);
+      const displayModel =
+        modelName.charAt(0).toUpperCase() + modelName.slice(1);
 
       statsSpan.textContent = `${displayModel} | ${tokenCount} tokens | ${tps} t/s`;
 
       // Save complete message to log
       fullMessageLog.push({
-          role: "assistant",
-          content: fullContent,
-          metadata: { model: modelSelect.value }
+        role: "assistant",
+        content: fullContent,
+        metadata: { model: modelSelect.value },
       });
       saveMessageLog();
 
       sendPromptBtn.style.display = "grid";
       stopGeneratingBtn.style.display = "none";
-      
+
       if (onComplete) {
         onComplete(fullContent);
       }
-      
     } catch (error) {
       if (loadingIndicator.parentNode) {
         chatHistory.removeChild(loadingIndicator);
@@ -859,10 +930,11 @@ ${finalContent}`;
     const prompt = promptInput.value;
     if (prompt) {
       appendUserMessage(prompt); // Display just the question
-      
+
       let finalPrompt = prompt;
       let contextToUse = selectedContextText;
-      const maxTokens = parseInt(maxTokensInput.value, 10) || DEFAULT_CONTEXT_TOKEN_LIMIT;
+      const maxTokens =
+        parseInt(maxTokensInput.value, 10) || DEFAULT_CONTEXT_TOKEN_LIMIT;
       const charLimit = maxTokens * 4;
 
       // Process Context (RAG/Truncation)
@@ -872,24 +944,33 @@ ${finalContent}`;
         if (contextToUse.length + overhead > charLimit) {
           const availableSpace = charLimit - overhead;
           if (availableSpace > 0) {
-            if (typeof RAGEngine !== 'undefined' && enableRagCheckbox.checked) {
-                const retrieved = RAGEngine.retrieve(selectedContextText, prompt, availableSpace);
-                if (retrieved && retrieved.length < selectedContextText.length) {
-                    contextToUse = retrieved;
-                    if (!hideContextToastsCheckbox.checked) showToast("Large context: Used relevant snippets.", "info");
-                } else {
-                    contextToUse = contextToUse.substring(0, availableSpace) + "... (truncated)";
-                    if (!hideContextToastsCheckbox.checked) showToast("Context truncated to fit token limit.", "warning");
-                }
+            if (typeof RAGEngine !== "undefined" && enableRagCheckbox.checked) {
+              const retrieved = RAGEngine.retrieve(
+                selectedContextText,
+                prompt,
+                availableSpace
+              );
+              if (retrieved && retrieved.length < selectedContextText.length) {
+                contextToUse = retrieved;
+                if (!hideContextToastsCheckbox.checked)
+                  showToast("Large context: Used relevant snippets.", "info");
+              } else {
+                contextToUse =
+                  contextToUse.substring(0, availableSpace) + "... (truncated)";
+                if (!hideContextToastsCheckbox.checked)
+                  showToast("Context truncated to fit token limit.", "warning");
+              }
             } else {
-                contextToUse = contextToUse.substring(0, availableSpace) + "... (truncated)";
-                if (!hideContextToastsCheckbox.checked) showToast("Context truncated to fit token limit.", "warning");
+              contextToUse =
+                contextToUse.substring(0, availableSpace) + "... (truncated)";
+              if (!hideContextToastsCheckbox.checked)
+                showToast("Context truncated to fit token limit.", "warning");
             }
           } else {
             contextToUse = contextToUse.substring(0, 100) + "... (truncated)";
           }
         }
-        
+
         // Construct the prompt string that INCLUDES context
         finalPrompt = `Context:
 ${contextToUse}
@@ -904,54 +985,61 @@ ${prompt}`;
 
       // Check if context has changed
       if (enableHistory) {
-          const currentContextSig = selectedContextText ? selectedContextText.substring(0, 100) + selectedContextText.length : "NO_CONTEXT";
-          const lastContextSig = lastContextSignature ? lastContextSignature.substring(0, 100) + lastContextSignature.length : "NO_CONTEXT";
-          
-          // If context changed, reset history
-          if (currentContextSig !== lastContextSig) {
-              conversationHistory = [];
-              lastContextSignature = selectedContextText;
-          }
-      } else {
-          // If history disabled, always reset (stateless)
+        const currentContextSig = selectedContextText
+          ? selectedContextText.substring(0, 100) + selectedContextText.length
+          : "NO_CONTEXT";
+        const lastContextSig = lastContextSignature
+          ? lastContextSignature.substring(0, 100) + lastContextSignature.length
+          : "NO_CONTEXT";
+
+        // If context changed, reset history
+        if (currentContextSig !== lastContextSig) {
           conversationHistory = [];
+          lastContextSignature = selectedContextText;
+        }
+      } else {
+        // If history disabled, always reset (stateless)
+        conversationHistory = [];
       }
 
       if (enableHistory && conversationHistory.length > 0) {
-          // FOLLOW-UP QUESTION
-          // We assume the context was already sent in the history.
-          // BUT, if the previous message didn't have context (general chat) and now we have context, we must include it.
-          // Or if we had context and now we don't.
-          
-          // Simplification: If context is active now, we include it in THIS message if it wasn't the starter.
-          // Actually, if we cleared history on context change (above), then:
-          // 1. If history is empty: We are starting. Send `finalPrompt` (Context + Q).
-          // 2. If history is NOT empty: We are following up on SAME context. Send `prompt` (Q only).
-          
-          messagesToSend = [...conversationHistory, { role: "user", content: prompt }];
+        // FOLLOW-UP QUESTION
+        // We assume the context was already sent in the history.
+        // BUT, if the previous message didn't have context (general chat) and now we have context, we must include it.
+        // Or if we had context and now we don't.
+
+        // Simplification: If context is active now, we include it in THIS message if it wasn't the starter.
+        // Actually, if we cleared history on context change (above), then:
+        // 1. If history is empty: We are starting. Send `finalPrompt` (Context + Q).
+        // 2. If history is NOT empty: We are following up on SAME context. Send `prompt` (Q only).
+
+        messagesToSend = [
+          ...conversationHistory,
+          { role: "user", content: prompt },
+        ];
       } else {
-          // FIRST QUESTION (or History Disabled)
-          // Send `finalPrompt` (Context + Q)
-          // We add `finalPrompt` to history so the context is remembered for next time.
-          messagesToSend = [{ role: "user", content: finalPrompt }];
+        // FIRST QUESTION (or History Disabled)
+        // Send `finalPrompt` (Context + Q)
+        // We add `finalPrompt` to history so the context is remembered for next time.
+        messagesToSend = [{ role: "user", content: finalPrompt }];
       }
 
       streamResponse(messagesToSend, (aiResponse) => {
-          if (enableHistory) {
-              // Update History
-              if (conversationHistory.length === 0) {
-                  // First turn: save the context-laden prompt
-                  conversationHistory.push({ role: "user", content: finalPrompt });
-              } else {
-                  // Follow up: save the simple prompt
-                  conversationHistory.push({ role: "user", content: prompt });
-              }
-              conversationHistory.push({ role: "assistant", content: aiResponse });
-              saveConversationHistory();
-              updateInputPlaceholder();
+        if (enableHistory) {
+          // Update History
+          if (conversationHistory.length === 0) {
+            // First turn: save the context-laden prompt
+            conversationHistory.push({ role: "user", content: finalPrompt });
+          } else {
+            // Follow up: save the simple prompt
+            conversationHistory.push({ role: "user", content: prompt });
           }
+          conversationHistory.push({ role: "assistant", content: aiResponse });
+          saveConversationHistory();
+          updateInputPlaceholder();
+        }
       });
-      
+
       promptInput.value = "";
     }
   });
@@ -965,33 +1053,40 @@ ${prompt}`;
   const saveMaxTokens = () => {
     browser.storage.local.set({ maxTokens: maxTokensInput.value });
   };
-  
+
   const saveEnableHistory = () => {
-      browser.storage.local.set({ enableHistory: enableHistoryCheckbox.checked });
-      updateInputPlaceholder();
+    browser.storage.local.set({ enableHistory: enableHistoryCheckbox.checked });
+    updateInputPlaceholder();
   };
 
   const saveEnableRag = () => {
-      browser.storage.local.set({ enableRag: enableRagCheckbox.checked });
+    browser.storage.local.set({ enableRag: enableRagCheckbox.checked });
   };
 
   const saveHideContextToasts = () => {
-      browser.storage.local.set({ hideContextToasts: hideContextToastsCheckbox.checked });
+    browser.storage.local.set({
+      hideContextToasts: hideContextToastsCheckbox.checked,
+    });
   };
 
   const loadSettings = async () => {
-    const data = await browser.storage.local.get(["maxTokens", "enableHistory", "enableRag", "hideContextToasts"]);
+    const data = await browser.storage.local.get([
+      "maxTokens",
+      "enableHistory",
+      "enableRag",
+      "hideContextToasts",
+    ]);
     if (data.maxTokens) {
       maxTokensInput.value = data.maxTokens;
     }
     if (data.enableHistory !== undefined) {
-        enableHistoryCheckbox.checked = data.enableHistory;
+      enableHistoryCheckbox.checked = data.enableHistory;
     }
     if (data.enableRag !== undefined) {
-        enableRagCheckbox.checked = data.enableRag;
+      enableRagCheckbox.checked = data.enableRag;
     }
     if (data.hideContextToasts !== undefined) {
-        hideContextToastsCheckbox.checked = data.hideContextToasts;
+      hideContextToastsCheckbox.checked = data.hideContextToasts;
     }
   };
 
@@ -1015,29 +1110,40 @@ ${prompt}`;
 
       if (finalContent.length > charLimit) {
         if (enableRagCheckbox.checked) {
-            // Smart Selection Strategy
-            const introLimit = Math.floor(charLimit * 0.2);
-            const outroLimit = Math.floor(charLimit * 0.2);
-            const middleLimit = charLimit - introLimit - outroLimit;
-            const intro = finalContent.substring(0, introLimit);
-            const outro = finalContent.substring(finalContent.length - outroLimit);
-            const middleText = finalContent.substring(introLimit, finalContent.length - outroLimit);
-            let middle = "";
-            if (middleText.length > 0) {
-                const step = Math.floor(middleText.length / 3);
-                const chunkLen = Math.floor(middleLimit / 3);
-                for (let i = 0; i < 3; i++) {
-                    const start = i * step;
-                    const slice = middleText.substring(start, start + chunkLen);
-                    middle += "\n\n...[skipped]...\n\n" + slice;
-                }
+          // Smart Selection Strategy
+          const introLimit = Math.floor(charLimit * 0.2);
+          const outroLimit = Math.floor(charLimit * 0.2);
+          const middleLimit = charLimit - introLimit - outroLimit;
+          const intro = finalContent.substring(0, introLimit);
+          const outro = finalContent.substring(
+            finalContent.length - outroLimit
+          );
+          const middleText = finalContent.substring(
+            introLimit,
+            finalContent.length - outroLimit
+          );
+          let middle = "";
+          if (middleText.length > 0) {
+            const step = Math.floor(middleText.length / 3);
+            const chunkLen = Math.floor(middleLimit / 3);
+            for (let i = 0; i < 3; i++) {
+              const start = i * step;
+              const slice = middleText.substring(start, start + chunkLen);
+              middle += "\n\n...[skipped]...\n\n" + slice;
             }
-            finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
-            if (!hideContextToastsCheckbox.checked) showToast(`Page content summarized via smart selection to fit limit.`, "info");
+          }
+          finalContent = intro + middle + "\n\n...[skipped]...\n\n" + outro;
+          if (!hideContextToastsCheckbox.checked)
+            showToast(
+              `Page content summarized via smart selection to fit limit.`,
+              "info"
+            );
         } else {
-            // Simple Truncation
-            finalContent = finalContent.substring(0, charLimit) + "... (truncated)";
-            if (!hideContextToastsCheckbox.checked) showToast(`Page content truncated to fit limit.`, "warning");
+          // Simple Truncation
+          finalContent =
+            finalContent.substring(0, charLimit) + "... (truncated)";
+          if (!hideContextToastsCheckbox.checked)
+            showToast(`Page content truncated to fit limit.`, "warning");
         }
       }
 
@@ -1047,28 +1153,29 @@ ${prompt}`;
         url: tab.url,
         favIconUrl: tab.favIconUrl,
       });
-      
+
       // RESET HISTORY for new summary
       conversationHistory = [];
       lastContextSignature = content; // Implicit context
-      
+
       const messages = [{ role: "user", content: prompt }];
-      
-            streamResponse(messages, (aiResponse) => {
-                if (enableHistoryCheckbox.checked) {
-                    conversationHistory.push(...messages);
-                    conversationHistory.push({ role: "assistant", content: aiResponse });
-                    saveConversationHistory();
-                    updateInputPlaceholder();
-                    
-                    // Implicitly set context so user can ask follow ups
-                    updateContextDisplay(content, true, {
-                        title: tab.title,
-                        url: tab.url,
-                        favIconUrl: tab.favIconUrl
-                    });
-                }
-            });    }
+
+      streamResponse(messages, (aiResponse) => {
+        if (enableHistoryCheckbox.checked) {
+          conversationHistory.push(...messages);
+          conversationHistory.push({ role: "assistant", content: aiResponse });
+          saveConversationHistory();
+          updateInputPlaceholder();
+
+          // Implicitly set context so user can ask follow ups
+          updateContextDisplay(content, true, {
+            title: tab.title,
+            url: tab.url,
+            favIconUrl: tab.favIconUrl,
+          });
+        }
+      });
+    }
   });
 
   clearChatBtn.addEventListener("click", () => {
@@ -1086,34 +1193,40 @@ ${prompt}`;
   });
 
   const initializeContext = async () => {
-      try {
-        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-        if (tabs && tabs.length > 0) {
-            const response = await browser.tabs.sendMessage(tabs[0].id, { action: "get_selection" });
-            const currentSelection = response && response.selection ? response.selection.trim() : "";
-            
-            if (currentSelection) {
-                updateContextDisplay(currentSelection, false, {
-                    title: tabs[0].title,
-                    url: tabs[0].url,
-                    favIconUrl: tabs[0].favIconUrl
-                });
-                return;
-            }
-        }
-      } catch (error) {
-          // Ignore errors (e.g. restricted pages)
-      }
-
-      // Fallback to page content
-      const result = await getPageContent();
-      if (result) {
-        updateContextDisplay(result.content, true, {
-          title: result.tab.title,
-          url: result.tab.url,
-          favIconUrl: result.tab.favIconUrl,
+    try {
+      const tabs = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      if (tabs && tabs.length > 0) {
+        const response = await browser.tabs.sendMessage(tabs[0].id, {
+          action: "get_selection",
         });
+        const currentSelection =
+          response && response.selection ? response.selection.trim() : "";
+
+        if (currentSelection) {
+          updateContextDisplay(currentSelection, false, {
+            title: tabs[0].title,
+            url: tabs[0].url,
+            favIconUrl: tabs[0].favIconUrl,
+          });
+          return;
+        }
       }
+    } catch (error) {
+      // Ignore errors (e.g. restricted pages)
+    }
+
+    // Fallback to page content
+    const result = await getPageContent();
+    if (result) {
+      updateContextDisplay(result.content, true, {
+        title: result.tab.title,
+        url: result.tab.url,
+        favIconUrl: result.tab.favIconUrl,
+      });
+    }
   };
 
   const init = async () => {
