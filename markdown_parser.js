@@ -14,7 +14,7 @@ const parseMarkdown = (text) => {
   // Regex captures the code block content including delimiters
   const parts = text.split(/(```[\s\S]*?```|`[^`]+`)/g);
 
-  return parts.map(part => {
+  const finalHtml = parts.map(part => {
     // If it's a code block
     if (part.startsWith('```')) {
       // Remove backticks
@@ -64,4 +64,9 @@ const parseMarkdown = (text) => {
 
     return html;
   }).join('');
+
+  if (typeof DOMPurify !== 'undefined') {
+    return DOMPurify.sanitize(finalHtml, { ADD_ATTR: ['target'] });
+  }
+  return finalHtml;
 };

@@ -606,7 +606,7 @@ ${finalContent}`;
         }
     } else {
         // AI Message
-        messageContent.innerHTML = parseMarkdown(message.content);
+        messageContent.innerHTML = DOMPurify.sanitize(parseMarkdown(message.content), { ADD_ATTR: ['target'] });
     }
 
     messageElement.appendChild(messageContent);
@@ -803,7 +803,7 @@ ${finalContent}`;
                 const content = json.choices[0].delta.content;
                 fullContent += content;
                 tokenCount++;
-                messageContent.innerHTML = parseMarkdown(fullContent);
+                messageContent.innerHTML = DOMPurify.sanitize(parseMarkdown(fullContent), { ADD_ATTR: ['target'] });
                 chatHistory.scrollTop = chatHistory.scrollHeight;
               }
             } catch (error) {

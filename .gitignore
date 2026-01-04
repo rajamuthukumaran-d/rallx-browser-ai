@@ -1,0 +1,14 @@
+# OS defaults
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Cache files
+*.cache
+*.lock
+
+# Environment files
+.env
