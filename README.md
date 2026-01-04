@@ -87,6 +87,10 @@ Since the extension runs in the browser, providers must allow Cross-Origin Resou
 - **Refresh the page:** The content script might not have loaded if the page was already open before the extension was installed/reloaded.
 - **Restricted Pages:** Browser extensions cannot access certain pages (e.g., `about:`, `addons.mozilla.org`, or internal Firefox pages) for security reasons.
 
+## 📄 License
+
+This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for details.
+
 ## 🤝 Contributing
 
 This project is built to be simple and hackable. Since there is no build step, you can just edit the files and click "Reload" in the Firefox debugging dashboard to see your changes immediately.

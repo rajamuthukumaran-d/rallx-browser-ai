@@ -1,3 +1,21 @@
+/**
+ * Rallx Browser AI - Encryption Utils
+ * Copyright (C) 2026 Rajamuthukumaran D
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 const EncryptionUtils = {
   // Generate a new AES-GCM key
   generateKey: async () => {
@@ -48,8 +66,8 @@ const EncryptionUtils = {
     // We'll use a simple JSON structure or delimiter
     const encryptedArray = new Uint8Array(encrypted);
     const combined = {
-        iv: Array.from(iv),
-        data: Array.from(encryptedArray)
+      iv: Array.from(iv),
+      data: Array.from(encryptedArray),
     };
     return JSON.stringify(combined);
   },
@@ -57,24 +75,24 @@ const EncryptionUtils = {
   // Decrypt text
   decrypt: async (encryptedString, key) => {
     try {
-        const combined = JSON.parse(encryptedString);
-        const iv = new Uint8Array(combined.iv);
-        const data = new Uint8Array(combined.data);
+      const combined = JSON.parse(encryptedString);
+      const iv = new Uint8Array(combined.iv);
+      const data = new Uint8Array(combined.data);
 
-        const decrypted = await window.crypto.subtle.decrypt(
+      const decrypted = await window.crypto.subtle.decrypt(
         {
-            name: "AES-GCM",
-            iv: iv,
+          name: "AES-GCM",
+          iv: iv,
         },
         key,
         data
-        );
+      );
 
-        const decoder = new TextDecoder();
-        return decoder.decode(decrypted);
+      const decoder = new TextDecoder();
+      return decoder.decode(decrypted);
     } catch (e) {
-        console.error("Decryption failed:", e);
-        return null;
+      console.error("Decryption failed:", e);
+      return null;
     }
-  }
+  },
 };
