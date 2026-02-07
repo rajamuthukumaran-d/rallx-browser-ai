@@ -67,7 +67,7 @@ const parseMarkdown = (text) => {
       // Links - only allow http/https
       html = html.replace(
         /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-        '<a href="$2" target="_blank">$1</a>'
+        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
       );
 
       // Unordered Lists (simple heuristic: line starting with - or * )
@@ -91,5 +91,13 @@ const parseMarkdown = (text) => {
   if (typeof DOMPurify !== "undefined") {
     return DOMPurify.sanitize(finalHtml, { ADD_ATTR: ["target"] });
   }
-  return finalHtml;
+  
+  // Security Fallback: If DOMPurify is not available, return the escaped text
+  // version of the HTML to prevent XSS. We already escaped 'parts' during processing.
+  // We should NOT return finalHtml as it contains our own <strong>, <a>, etc tags
+  // which might be spoofed if the input was clever.
+  // Actually, since we escape the LLM input at the start of each part,
+  // finalHtml is mostly safe BUT it contains our tags.
+  // If DOMPurify is missing, it's safer to just return the original text escaped.
+  return escapeHtml(text);
 };
