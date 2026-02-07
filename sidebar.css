@@ -142,6 +142,12 @@ html {
   align-items: center;
 }
 
+.setting-item-row.disabled-setting {
+  opacity: 0.5;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
 .label-with-info {
   display: flex;
   align-items: center;
