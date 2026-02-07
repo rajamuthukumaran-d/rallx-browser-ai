@@ -143,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const DEFAULT_CONTEXT_TOKEN_LIMIT = 3098;
 
   let selectedContextText = "";
+  let selectedContextMetadata = null;
   let lastIgnoredSelection = "";
   let isPageContext = false;
 
@@ -176,6 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const updateContextDisplay = (text, isPage = false, metadata = null) => {
     if (text) {
       selectedContextText = text;
+      selectedContextMetadata = metadata;
       isPageContext = isPage;
 
       // Update Title
@@ -223,6 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
       updateInputPlaceholder();
     } else {
       selectedContextText = "";
+      selectedContextMetadata = null;
       isPageContext = false;
       contextTitle.textContent = "";
       contextDetails.textContent = "";
@@ -285,7 +288,11 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
 
-        const prompt = `Summarize the following text:
+        const urlInfo =
+          selectedContextMetadata && selectedContextMetadata.url
+            ? `Source URL: ${selectedContextMetadata.url}\n\n`
+            : "";
+        const prompt = `${urlInfo}Summarize the following text:
 
 ${finalContent}`;
         appendUserMessage("Summarize selection");
@@ -972,11 +979,23 @@ ${finalContent}`;
         }
 
         // Construct the prompt string that INCLUDES context
-        finalPrompt = `Context:
+        const urlInfo =
+          selectedContextMetadata && selectedContextMetadata.url
+            ? `Source URL: ${selectedContextMetadata.url}\n\n`
+            : "";
+        
+        finalPrompt = `You are a helpful browser assistant.
+
+${urlInfo}Context:
 ${contextToUse}
 
 Question:
-${prompt}`;
+${prompt}
+
+Instructions:
+1. Answer the question using the provided context if possible.
+2. If the answer is not in the context, use your general knowledge or search the web if you are able to do so.
+3. Do not simply state that the information is missing from the context unless you cannot answer from general knowledge either.`;
       }
 
       // HISTORY LOGIC
@@ -1147,7 +1166,8 @@ ${prompt}`;
         }
       }
 
-      const prompt = `Summarize the following web page content: ${finalContent}`;
+      const urlInfo = tab.url ? `Source URL: ${tab.url}\n\n` : "";
+      const prompt = `${urlInfo}Summarize the following web page content: ${finalContent}`;
       appendUserMessage("Summarize this page", {
         title: tab.title,
         url: tab.url,
