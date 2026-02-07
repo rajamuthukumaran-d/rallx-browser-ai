@@ -1004,7 +1004,9 @@ ${finalContent}`;
 
         const contextInfo = contextToUse
           ? `Context:
-${contextToUse}`
+"""
+${contextToUse}
+"""`
           : "Use the Source URL to understand the context or search for it if you have access.";
 
         finalPrompt = `You are a helpful browser assistant.

@@ -67,7 +67,7 @@ const parseMarkdown = (text) => {
       // Links - only allow http/https
       html = html.replace(
         /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-        '<a href="$2" target="_blank">$1</a>'
+        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
       );
 
       // Unordered Lists (simple heuristic: line starting with - or * )
