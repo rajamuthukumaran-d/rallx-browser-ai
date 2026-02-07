@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const contextDetails = document.getElementById("context-details");
   const contextIcon = document.getElementById("context-icon");
   const contextIconPlaceholder = document.getElementById(
-    "context-icon-placeholder"
+    "context-icon-placeholder",
   );
   const removeContextBtn = document.getElementById("remove-context");
   const summarizeSelectionBtn = document.getElementById("summarize-selection");
@@ -44,8 +44,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const enableHistoryCheckbox = document.getElementById("enable-history");
   const enableRagCheckbox = document.getElementById("enable-rag");
+  const includePageContentCheckbox = document.getElementById(
+    "include-page-content",
+  );
   const hideContextToastsCheckbox = document.getElementById(
-    "hide-context-toasts"
+    "hide-context-toasts",
   );
   const maxTokensInput = document.getElementById("max-tokens");
 
@@ -143,6 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const DEFAULT_CONTEXT_TOKEN_LIMIT = 3098;
 
   let selectedContextText = "";
+  let selectedContextMetadata = null;
   let lastIgnoredSelection = "";
   let isPageContext = false;
 
@@ -176,6 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const updateContextDisplay = (text, isPage = false, metadata = null) => {
     if (text) {
       selectedContextText = text;
+      selectedContextMetadata = metadata;
       isPageContext = isPage;
 
       // Update Title
@@ -223,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
       updateInputPlaceholder();
     } else {
       selectedContextText = "";
+      selectedContextMetadata = null;
       isPageContext = false;
       contextTitle.textContent = "";
       contextDetails.textContent = "";
@@ -254,11 +260,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const middleLimit = charLimit - introLimit - outroLimit;
             const intro = finalContent.substring(0, introLimit);
             const outro = finalContent.substring(
-              finalContent.length - outroLimit
+              finalContent.length - outroLimit,
             );
             const middleText = finalContent.substring(
               introLimit,
-              finalContent.length - outroLimit
+              finalContent.length - outroLimit,
             );
             let middle = "";
             if (middleText.length > 0) {
@@ -274,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!hideContextToastsCheckbox.checked)
               showToast(
                 `Selection content summarized via smart selection to fit limit.`,
-                "info"
+                "info",
               );
           } else {
             // Simple Truncation
@@ -285,7 +291,11 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
 
-        const prompt = `Summarize the following text:
+        const urlInfo =
+          selectedContextMetadata && selectedContextMetadata.url
+            ? `Source URL: ${selectedContextMetadata.url}\n\n`
+            : "";
+        const prompt = `${urlInfo}Summarize the following text:
 
 ${finalContent}`;
         appendUserMessage("Summarize selection");
@@ -438,7 +448,7 @@ ${finalContent}`;
       if (!response.ok) {
         if (response.status === 403) {
           throw new Error(
-            '403 Forbidden. Check API Key or CORS settings (e.g. OLLAMA_ORIGINS="*").'
+            '403 Forbidden. Check API Key or CORS settings (e.g. OLLAMA_ORIGINS="*").',
           );
         }
         throw new Error(`HTTP Error: ${response.status}`);
@@ -559,14 +569,14 @@ ${finalContent}`;
 
   const saveApiKeyBtn = document.getElementById("save-api-key");
   const toggleApiKeyVisibilityBtn = document.getElementById(
-    "toggle-api-key-visibility"
+    "toggle-api-key-visibility",
   );
 
   const saveApiKey = async () => {
     if (!cryptoKey) await initializeEncryption();
     const encrypted = await EncryptionUtils.encrypt(
       apiKeyInput.value,
-      cryptoKey
+      cryptoKey,
     );
     browser.storage.local.set({ apiKey: encrypted });
   };
@@ -595,7 +605,7 @@ ${finalContent}`;
 
   const clearChatToolbar = document.getElementById("clear-chat-toolbar");
   const refreshModelsToolbar = document.getElementById(
-    "refresh-models-toolbar"
+    "refresh-models-toolbar",
   );
 
   if (clearChatToolbar) {
@@ -603,7 +613,7 @@ ${finalContent}`;
   }
   if (refreshModelsToolbar) {
     refreshModelsToolbar.addEventListener("click", () =>
-      refreshModelsBtn.click()
+      refreshModelsBtn.click(),
     );
   }
 
@@ -611,7 +621,7 @@ ${finalContent}`;
     const messageElement = document.createElement("div");
     messageElement.classList.add(
       "message",
-      message.role === "user" ? "user" : "ai"
+      message.role === "user" ? "user" : "ai",
     );
 
     const messageContent = document.createElement("div");
@@ -665,7 +675,7 @@ ${finalContent}`;
       // AI Message
       messageContent.innerHTML = DOMPurify.sanitize(
         parseMarkdown(message.content),
-        { ADD_ATTR: ["target"] }
+        { ADD_ATTR: ["target"] },
       );
     }
 
@@ -797,7 +807,7 @@ ${finalContent}`;
       if (!response.ok) {
         if (response.status === 403) {
           throw new Error(
-            '403 Forbidden. Check API Key or CORS settings (e.g. OLLAMA_ORIGINS="*").'
+            '403 Forbidden. Check API Key or CORS settings (e.g. OLLAMA_ORIGINS="*").',
           );
         }
         throw new Error(`HTTP Error: ${response.status}`);
@@ -873,7 +883,7 @@ ${finalContent}`;
                 tokenCount++;
                 messageContent.innerHTML = DOMPurify.sanitize(
                   parseMarkdown(fullContent),
-                  { ADD_ATTR: ["target"] }
+                  { ADD_ATTR: ["target"] },
                 );
                 chatHistory.scrollTop = chatHistory.scrollHeight;
               }
@@ -939,21 +949,41 @@ ${finalContent}`;
 
       // Process Context (RAG/Truncation)
       if (contextToUse) {
-        // ... (Same context processing logic as before) ...
-        const overhead = 21 + prompt.length;
-        if (contextToUse.length + overhead > charLimit) {
-          const availableSpace = charLimit - overhead;
-          if (availableSpace > 0) {
-            if (typeof RAGEngine !== "undefined" && enableRagCheckbox.checked) {
-              const retrieved = RAGEngine.retrieve(
-                selectedContextText,
-                prompt,
-                availableSpace
-              );
-              if (retrieved && retrieved.length < selectedContextText.length) {
-                contextToUse = retrieved;
-                if (!hideContextToastsCheckbox.checked)
-                  showToast("Large context: Used relevant snippets.", "info");
+        if (isPageContext && !includePageContentCheckbox.checked) {
+          contextToUse = ""; // Clear content if page context is disabled
+        }
+
+        if (contextToUse) {
+          const overhead = 21 + prompt.length;
+          if (contextToUse.length + overhead > charLimit) {
+            const availableSpace = charLimit - overhead;
+            if (availableSpace > 0) {
+              if (
+                typeof RAGEngine !== "undefined" &&
+                enableRagCheckbox.checked
+              ) {
+                const retrieved = RAGEngine.retrieve(
+                  selectedContextText,
+                  prompt,
+                  availableSpace,
+                );
+                if (
+                  retrieved &&
+                  retrieved.length < selectedContextText.length
+                ) {
+                  contextToUse = retrieved;
+                  if (!hideContextToastsCheckbox.checked)
+                    showToast("Large context: Used relevant snippets.", "info");
+                } else {
+                  contextToUse =
+                    contextToUse.substring(0, availableSpace) +
+                    "... (truncated)";
+                  if (!hideContextToastsCheckbox.checked)
+                    showToast(
+                      "Context truncated to fit token limit.",
+                      "warning",
+                    );
+                }
               } else {
                 contextToUse =
                   contextToUse.substring(0, availableSpace) + "... (truncated)";
@@ -961,22 +991,33 @@ ${finalContent}`;
                   showToast("Context truncated to fit token limit.", "warning");
               }
             } else {
-              contextToUse =
-                contextToUse.substring(0, availableSpace) + "... (truncated)";
-              if (!hideContextToastsCheckbox.checked)
-                showToast("Context truncated to fit token limit.", "warning");
+              contextToUse = contextToUse.substring(0, 100) + "... (truncated)";
             }
-          } else {
-            contextToUse = contextToUse.substring(0, 100) + "... (truncated)";
           }
         }
 
         // Construct the prompt string that INCLUDES context
-        finalPrompt = `Context:
-${contextToUse}
+        const urlInfo =
+          selectedContextMetadata && selectedContextMetadata.url
+            ? `Source URL: ${selectedContextMetadata.url}\n\n`
+            : "";
+
+        const contextInfo = contextToUse
+          ? `Context:
+${contextToUse}`
+          : "Use the Source URL to understand the context or search for it if you have access.";
+
+        finalPrompt = `You are a helpful browser assistant.
+
+${urlInfo}${contextInfo}
 
 Question:
-${prompt}`;
+${prompt}
+
+Instructions:
+1. Answer the question using the provided context if possible.
+2. If the answer is not in the context, use your general knowledge or search the web if you are able to do so.
+3. Do not simply state that the information is missing from the context unless you cannot answer from general knowledge either.`;
       }
 
       // HISTORY LOGIC
@@ -1063,6 +1104,21 @@ ${prompt}`;
     browser.storage.local.set({ enableRag: enableRagCheckbox.checked });
   };
 
+  const saveIncludePageContent = () => {
+    const isIncluded = includePageContentCheckbox.checked;
+    browser.storage.local.set({
+      includePageContent: isIncluded,
+    });
+
+    // Disable RAG if page content is not included
+    enableRagCheckbox.disabled = !isIncluded;
+    if (!isIncluded) {
+      enableRagCheckbox.parentElement.classList.add("disabled-setting");
+    } else {
+      enableRagCheckbox.parentElement.classList.remove("disabled-setting");
+    }
+  };
+
   const saveHideContextToasts = () => {
     browser.storage.local.set({
       hideContextToasts: hideContextToastsCheckbox.checked,
@@ -1074,6 +1130,7 @@ ${prompt}`;
       "maxTokens",
       "enableHistory",
       "enableRag",
+      "includePageContent",
       "hideContextToasts",
     ]);
     if (data.maxTokens) {
@@ -1085,6 +1142,14 @@ ${prompt}`;
     if (data.enableRag !== undefined) {
       enableRagCheckbox.checked = data.enableRag;
     }
+    if (data.includePageContent !== undefined) {
+      includePageContentCheckbox.checked = data.includePageContent;
+      // Initialize RAG disabled state
+      enableRagCheckbox.disabled = !data.includePageContent;
+      if (!data.includePageContent) {
+        enableRagCheckbox.parentElement.classList.add("disabled-setting");
+      }
+    }
     if (data.hideContextToasts !== undefined) {
       hideContextToastsCheckbox.checked = data.hideContextToasts;
     }
@@ -1093,6 +1158,7 @@ ${prompt}`;
   maxTokensInput.addEventListener("change", saveMaxTokens);
   enableHistoryCheckbox.addEventListener("change", saveEnableHistory);
   enableRagCheckbox.addEventListener("change", saveEnableRag);
+  includePageContentCheckbox.addEventListener("change", saveIncludePageContent);
   hideContextToastsCheckbox.addEventListener("change", saveHideContextToasts);
 
   summarizePageBtn.addEventListener("click", async () => {
@@ -1116,11 +1182,11 @@ ${prompt}`;
           const middleLimit = charLimit - introLimit - outroLimit;
           const intro = finalContent.substring(0, introLimit);
           const outro = finalContent.substring(
-            finalContent.length - outroLimit
+            finalContent.length - outroLimit,
           );
           const middleText = finalContent.substring(
             introLimit,
-            finalContent.length - outroLimit
+            finalContent.length - outroLimit,
           );
           let middle = "";
           if (middleText.length > 0) {
@@ -1136,7 +1202,7 @@ ${prompt}`;
           if (!hideContextToastsCheckbox.checked)
             showToast(
               `Page content summarized via smart selection to fit limit.`,
-              "info"
+              "info",
             );
         } else {
           // Simple Truncation
@@ -1147,7 +1213,15 @@ ${prompt}`;
         }
       }
 
-      const prompt = `Summarize the following web page content: ${finalContent}`;
+      const urlInfo = tab.url ? `Source URL: ${tab.url}\n\n` : "";
+      let prompt = "";
+
+      if (includePageContentCheckbox.checked) {
+        prompt = `${urlInfo}Summarize the following web page content: ${finalContent}`;
+      } else {
+        prompt = `${urlInfo}Summarize this web page. Please use the URL and your general knowledge or search capabilities to provide a summary of what this page is about.`;
+      }
+
       appendUserMessage("Summarize this page", {
         title: tab.title,
         url: tab.url,

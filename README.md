@@ -10,8 +10,10 @@
 - **📝 Selection Context:** Select any text on a webpage and ask questions about it or summarize just that specific section.
 - **💬 Context-Aware Chat:** Maintains conversation history, allowing for natural follow-up questions about the page or previous topics.
 - **🔒 Privacy First:**
-  - **Local Processing:** Your data stays on your machine (when using local models).
-  - **Encrypted Storage:** API keys (if used) are stored using AES-GCM encryption.
+  - **No Data Collection:** The developer does not collect, store, or share any of your personal data, browsing history, or chat logs.
+  - **Local Processing:** Your data stays on your machine when using local models (Ollama, LM Studio).
+  - **Encrypted Storage:** API keys (if used) are stored locally using AES-GCM encryption.
+  - **Direct Communication:** The extension communicates directly with your chosen LLM endpoint. No middle-man servers are used.
 - **⚡ Real-Time Streaming:** Responses stream in token-by-token for a snappy experience.
 - **🛠️ Developer Friendly:** Built with **Vanilla JavaScript** (ES Modules) — no build steps, bundlers, or transpilers required.
 
