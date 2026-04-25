@@ -18,22 +18,15 @@ rm -f "$BUILD_DIR/$FILENAME"
 # Use "*.DS_Store" to catch them in any directory
 zip -r "$BUILD_DIR/$FILENAME" \
     manifest.json \
-    sidebar.html \
-    sidebar.css \
-    sidebar.js \
-    background.js \
-    content_script.js \
-    encryption_utils.js \
-    markdown_parser.js \
-    rag.js \
+    src/ \
     assets/ \
-    libs/ \
     -x "*.git*" \
     -x "*.DS_Store" \
     -x "package.sh" \
     -x "prd.md" \
     -x "GEMINI.md" \
     -x "README.md" \
+    -x "CLAUDE.md" \
     -x ".prettierignore" \
     -x ".gitignore" \
     -x "build/*"
