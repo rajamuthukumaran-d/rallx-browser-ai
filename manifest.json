@@ -22,7 +22,7 @@
     "default_title": "Open Rallx Sidebar"
   },
   "sidebar_action": {
-    "default_panel": "sidebar.html",
+    "default_panel": "src/sidebar/sidebar.html",
     "default_icon": "assets/logo/icon_48.png",
     "default_title": "Rallx Browser AI"
   },
@@ -39,12 +39,12 @@
     }
   },
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["src/background.js"]
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content_script.js"]
+      "js": ["src/content_script.js"]
     }
   ],
   "commands": {

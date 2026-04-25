@@ -12,13 +12,13 @@
     <!-- Settings Panel (Overlay/Collapsible) -->
     <div id="settings-panel" class="settings-panel collapsed">
       <button id="close-settings" class="icon-button close-panel-btn" title="Close Settings">
-        <img src="assets/icons/close.svg" class="icon-img" alt="Close">
+        <img src="../../assets/icons/close.svg" class="icon-img" alt="Close">
       </button>
       <div class="setting-item">
         <div class="label-with-info">
           <label for="base-url">LLM Base URL</label>
           <div class="info-icon-wrapper">
-            <img src="assets/icons/info.svg" class="info-icon-img">
+            <img src="../../assets/icons/info.svg" class="info-icon-img">
             <span class="tooltip-text tooltip-bottom">The API endpoint for your local LLM server (e.g., Ollama or LM
               Studio).</span>
           </div>
@@ -27,7 +27,7 @@
           <div class="url-wrapper">
             <input type="text" id="base-url" value="http://localhost:1234/v1">
             <button id="pick-provider" class="icon-button" title="Pick Provider">
-              <img src="assets/icons/pick.svg" class="icon-img" alt="Pick">
+              <img src="../../assets/icons/pick.svg" class="icon-img" alt="Pick">
             </button>
             <div id="provider-dropdown" class="provider-dropdown hidden">
               <div class="provider-option" data-url="http://localhost:1234/v1">LM Studio</div>
@@ -44,7 +44,7 @@
         <div class="label-with-info">
           <label for="api-key">API Key (Optional)</label>
           <div class="info-icon-wrapper">
-            <img src="assets/icons/info.svg" class="info-icon-img">
+            <img src="../../assets/icons/info.svg" class="info-icon-img">
             <span class="tooltip-text tooltip-bottom">API Key for authentication if your provider requires it. Stored
               encrypted locally.</span>
           </div>
@@ -53,7 +53,7 @@
           <div class="password-wrapper">
             <input type="password" id="api-key">
             <button id="toggle-api-key-visibility" class="icon-button" title="Show/Hide API Key">
-              <img src="assets/icons/visibility_off.svg" class="icon-img" alt="Show/Hide">
+              <img src="../../assets/icons/visibility_off.svg" class="icon-img" alt="Show/Hide">
             </button>
           </div>
           <button id="save-api-key">Save</button>
@@ -63,7 +63,7 @@
         <div class="label-with-info">
           <label for="max-tokens">Max Context Tokens</label>
           <div class="info-icon-wrapper">
-            <img src="assets/icons/info.svg" class="info-icon-img">
+            <img src="../../assets/icons/info.svg" class="info-icon-img">
             <span class="tooltip-text">Maximum tokens to use for context (chat history + page content). Higher values
               use more memory. Make sure the limit you provide is supported by the model you are using.</span>
           </div>
@@ -74,7 +74,7 @@
         <div class="label-with-info">
           <label for="include-page-content">Include Page Content</label>
           <div class="info-icon-wrapper">
-            <img src="assets/icons/info.svg" class="info-icon-img">
+            <img src="../../assets/icons/info.svg" class="info-icon-img">
             <span class="tooltip-text">When enabled, the full text of the page is sent as context. When disabled, only the URL is sent.</span>
           </div>
         </div>
@@ -84,7 +84,7 @@
         <div class="label-with-info">
           <label for="enable-rag">Smart context (Alpha)</label>
           <div class="info-icon-wrapper">
-            <img src="assets/icons/info.svg" class="info-icon-img">
+            <img src="../../assets/icons/info.svg" class="info-icon-img">
             <span class="tooltip-text">Uses RAG (retrieval) to select relevant text from large pages instead of
               truncating. This helps maintain context for complex pages and reduces token waste by only sending relevant
               content to the LLM for processing.</span>
@@ -96,7 +96,7 @@
         <div class="label-with-info">
           <label for="enable-history">Enable follow up questions</label>
           <div class="info-icon-wrapper">
-            <img src="assets/icons/info.svg" class="info-icon-img">
+            <img src="../../assets/icons/info.svg" class="info-icon-img">
             <span class="tooltip-text">Allows the AI to remember previous messages in the conversation for context.
               Disabling this will increase the amount of tokens used for context.</span>
           </div>
@@ -107,7 +107,7 @@
         <div class="label-with-info">
           <label for="hide-context-toasts">Hide context warnings</label>
           <div class="info-icon-wrapper">
-            <img src="assets/icons/info.svg" class="info-icon-img">
+            <img src="../../assets/icons/info.svg" class="info-icon-img">
             <span class="tooltip-text">Suppress toast notifications when context is truncated or smart-selected.</span>
           </div>
         </div>
@@ -140,7 +140,7 @@
           <div id="context-details" class="context-details"></div>
         </div>
         <button id="remove-context" class="remove-context-btn">
-          <img src="assets/icons/close.svg" class="icon-img" alt="Remove">
+          <img src="../../assets/icons/close.svg" class="icon-img" alt="Remove">
         </button>
       </div>
     </div>
@@ -160,24 +160,24 @@
         <div class="input-toolbar">
           <div class="left-tools">
             <button id="clear-chat-toolbar" class="tool-btn" title="Clear Chat">
-              <img src="assets/icons/clear_all.svg" class="icon-img" alt="Clear">
+              <img src="../../assets/icons/clear_all.svg" class="icon-img" alt="Clear">
             </button>
             <button id="settings-toggle-toolbar" class="tool-btn" title="Settings">
-              <img src="assets/icons/settings.svg" class="icon-img" alt="Settings">
+              <img src="../../assets/icons/settings.svg" class="icon-img" alt="Settings">
             </button>
           </div>
           <div class="right-tools">
             <div class="model-selector-wrapper">
               <select id="model-select"></select>
               <span class="dropdown-arrow">
-                <img src="assets/icons/arrow_down.svg" class="icon-img" alt="v">
+                <img src="../../assets/icons/arrow_down.svg" class="icon-img" alt="v">
               </span>
             </div>
             <button id="send-prompt" class="send-btn">
-              <img src="assets/icons/send.svg" class="icon-img" alt="Send">
+              <img src="../../assets/icons/send.svg" class="icon-img" alt="Send">
             </button>
             <button id="stop-generating" class="stop-btn" style="display: none;">
-              <img src="assets/icons/stop.svg" class="icon-img" alt="Stop">
+              <img src="../../assets/icons/stop.svg" class="icon-img" alt="Stop">
             </button>
           </div>
         </div>
@@ -186,11 +186,8 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="libs/purify.min.js"></script>
-  <script src="markdown_parser.js"></script>
-  <script src="rag.js"></script>
-  <script src="encryption_utils.js"></script>
-  <script src="sidebar.js"></script>
+  <script src="../libs/purify.min.js"></script>
+  <script type="module" src="index.js"></script>
 </body>
 
 </html>
