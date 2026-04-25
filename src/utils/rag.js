@@ -20,7 +20,7 @@
  * Simple client-side RAG (Retrieval-Augmented Generation) Engine
  * Uses keyword matching (Lexical Search) to find relevant text chunks.
  */
-const RAGEngine = {
+export const RAGEngine = {
   // Configuration
   CHUNK_SIZE: 1500, // Characters per chunk
   CHUNK_OVERLAP: 200, // Overlap to preserve context
