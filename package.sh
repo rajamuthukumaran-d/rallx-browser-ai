@@ -29,6 +29,7 @@ zip -r "$BUILD_DIR/$FILENAME" \
     -x "CLAUDE.md" \
     -x ".prettierignore" \
     -x ".gitignore" \
+    -x "chrome/*" \
     -x "build/*"
 
 echo "-------------------------------------------"
