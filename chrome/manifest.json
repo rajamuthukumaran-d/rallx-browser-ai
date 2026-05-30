@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "Rallx browser AI",
+  "version": "1.1",
+  "description": "A sidebar AI assistant that connects to local or remote OpenAI-compatible LLM servers (Ollama, LMStudio, Gemini, OpenAI, etc).",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "storage",
+    "sidePanel"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.openai.com/*"
+  ],
+  "action": {
+    "default_icon": "assets/logo/icon_48.png",
+    "default_title": "Open Rallx Sidebar"
+  },
+  "side_panel": {
+    "default_path": "src/sidebar/sidebar.html"
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content_script.js"]
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E"
+      }
+    }
+  },
+  "icons": {
+    "16": "assets/logo/icon_16.png",
+    "32": "assets/logo/icon_32.png",
+    "48": "assets/logo/icon_48.png",
+    "128": "assets/logo/icon_128.png"
+  }
+}
