@@ -392,6 +392,13 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     if (DOM.clearChatBtn) DOM.clearChatBtn.click();
   }
+  if (e.ctrlKey && (e.key === "u" || e.key === "U")) {
+    e.preventDefault();
+    if (DOM.promptInput) {
+      DOM.promptInput.value = "";
+      DOM.promptInput.focus();
+    }
+  }
 });
 
 init();
