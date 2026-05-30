@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-const EncryptionUtils = {
+export const EncryptionUtils = {
   // Generate a new AES-GCM key
   generateKey: async () => {
     return await window.crypto.subtle.generateKey(

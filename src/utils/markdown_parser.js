@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-const parseMarkdown = (text) => {
+export const parseMarkdown = (text) => {
   // Helper to escape HTML to prevent XSS from the source text
   // but allow our own generated tags later.
   const escapeHtml = (str) => {
