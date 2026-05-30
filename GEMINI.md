@@ -19,6 +19,7 @@ Since this is a vanilla JavaScript browser extension, there are no build command
 *   **No Build Step:** The project uses vanilla JavaScript, HTML, and CSS. No transpilation or bundling is needed.
 *   **API:** The extension communicates with a local LLM server using an OpenAI-compatible Chat Completions API.
 *   **Manifest:** The project uses Firefox's Manifest V3.
+*   **Cross-Browser Parity:** Any change made to the Firefox extension must also be applied to the Chrome package (`chrome/`) unless the user explicitly says otherwise. This includes new features, bug fixes, UI changes, new settings, and content script updates. The shared `src/` modules and `assets/` are used by both, so changes there apply automatically. However, you must review and sync `chrome/manifest.json` and `chrome/src/background.js` whenever root `manifest.json` or `src/background.js` are updated, as they diverge due to browser-specific API differences.
 *   **File Structure:**
     *   `manifest.json`: Defines the extension's properties and permissions.
     *   `sidebar.html`: The main UI for the sidebar.

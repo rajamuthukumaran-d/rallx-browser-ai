@@ -387,4 +387,11 @@ if (DOM.clearChatBtn) {
 
 if (DOM.refreshModelsBtn) DOM.refreshModelsBtn.addEventListener("click", () => API.getModels());
 
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key === "l") {
+    e.preventDefault();
+    if (DOM.clearChatBtn) DOM.clearChatBtn.click();
+  }
+});
+
 init();
